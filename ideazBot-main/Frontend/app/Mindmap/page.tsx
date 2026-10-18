@@ -141,12 +141,13 @@ const MindmapPage = () => {
 
     try {
       const { root } = transformer.transform(markdown);
+      const isSmallScreen = window.innerWidth < 640;
       markmapRef.current = Markmap.create(svgRef.current, {
         autoFit: true,
-        maxWidth: 260,        // les libellés longs passent à la ligne
-        spacingVertical: 12,
-        spacingHorizontal: 100,
-        paddingX: 12,
+        maxWidth: isSmallScreen ? 160 : 260,   // les libellés longs passent à la ligne
+        spacingVertical: isSmallScreen ? 8 : 12,
+        spacingHorizontal: isSmallScreen ? 50 : 100,
+        paddingX: isSmallScreen ? 8 : 12,
         color: (node: INode) => {
           const colors = ['#7c3aed', '#4f46e5', '#06b6d4', '#0ea5e9', '#6366f1'];
           const level = (node.payload as any)?.depth || 0;
@@ -157,7 +158,12 @@ const MindmapPage = () => {
       console.error('Error creating mindmap:', error);
     }
 
+    // Recentre la carte quand la fenêtre change de taille (rotation du téléphone, redimensionnement)
+    const handleResize = () => markmapRef.current?.fit();
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (markmapRef.current) {
         markmapRef.current.destroy();
         markmapRef.current = null;
@@ -260,34 +266,109 @@ const MindmapPage = () => {
 
   if (!mindmapData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-        <div className="p-8 text-center shadow-xl rounded-2xl bg-white/80 backdrop-blur-sm">
+      <div className="flex items-center justify-center p-4 min-h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+        <div className="w-full max-w-sm p-6 text-center shadow-xl sm:p-8 rounded-2xl bg-white/80 backdrop-blur-sm">
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600">
             <Brain className="w-8 h-8 text-white" />
           </div>
           <h1 className="mb-2 text-xl font-bold text-gray-800">Aucune mindmap disponible</h1>
           <p className="text-gray-600">Veuillez d&apos;abord générer des idées dans le chatbot.</p>
+          <button
+            onClick={() => window.location.href = '/Chatbot'}
+            className="px-4 py-2 mt-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
+            Retour au chat
+          </button>
         </div>
       </div>
     );
   }
 
+  // Télécharge la mindmap affichée en image PNG
+  const handleDownloadPng = () => {
+    if (!svgRef.current) {
+      alert('Mindmap non générée');
+      return;
+    }
+    const svg = svgRef.current;
+    // Récupérer la taille réelle du SVG (fallback si non défini)
+    let width = 1200;
+    let height = 800;
+    if (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width && svg.viewBox.baseVal.height) {
+      width = svg.viewBox.baseVal.width;
+      height = svg.viewBox.baseVal.height;
+    } else if (svg.width?.baseVal?.value && svg.height?.baseVal?.value) {
+      width = svg.width.baseVal.value;
+      height = svg.height.baseVal.value;
+    } else if (svg.clientWidth && svg.clientHeight) {
+      width = svg.clientWidth;
+      height = svg.clientHeight;
+    }
+    // Convertir le SVG en base64 de façon robuste
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(svg);
+    // Corriger les caractères spéciaux pour base64
+    svgString = svgString.replace(/\uFEFF/g, '');
+    const svgBase64 = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)));
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'mindmap.png';
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+          } else {
+            alert('Erreur lors de la génération du PNG.');
+          }
+        }, 'image/png');
+      } else {
+        alert('Impossible de créer le contexte du canvas.');
+      }
+    };
+    img.onerror = () => {
+      alert('Erreur lors du rendu de l\'image.');
+    };
+    img.src = svgBase64;
+  };
+
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
+    // h-dvh + flex : la carte occupe toute la hauteur restante, sur mobile comme sur ordinateur
+    <div className="flex flex-col p-3 h-dvh sm:p-6 lg:p-8 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+      <div className="flex flex-col flex-1 w-full min-h-0 mx-auto max-w-7xl">
+        <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
+            <h1 className="text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
               Mindmap des Idées
             </h1>
-            <p className="text-gray-600">Visualisation de vos idées générées</p>
+            <p className="text-sm text-gray-600 sm:text-base">Visualisation de vos idées générées</p>
           </div>
-          <div className="flex flex-row gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <button
               onClick={() => window.location.href = '/Chatbot'}
-              className="px-4 py-2 text-purple-600 transition-all duration-200 border border-purple-200 rounded-xl hover:bg-purple-50"
+              className="px-4 py-2 text-sm text-purple-600 transition-all duration-200 border border-purple-200 sm:text-base rounded-xl hover:bg-purple-50"
             >
               Retour au chat
+            </button>
+            <button
+              onClick={handleDownloadPng}
+              disabled={status === 'loading'}
+              className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 sm:text-base rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
+            >
+              Télécharger l&apos;image
             </button>
           </div>
         </div>
@@ -298,7 +379,7 @@ const MindmapPage = () => {
           </div>
         )}
 
-        <div className="relative p-8 overflow-hidden shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="relative flex-1 min-h-[320px] p-2 overflow-hidden shadow-xl sm:p-6 lg:p-8 bg-white/80 backdrop-blur-sm rounded-2xl">
           {status === 'loading' && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70">
               <div className="flex items-center justify-center mb-3 rounded-full w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 animate-pulse">
@@ -307,76 +388,9 @@ const MindmapPage = () => {
               <p className="text-sm text-purple-700">Extraction des idées clés…</p>
             </div>
           )}
-          <svg ref={svgRef} style={{ width: '100%', height: '100%' }} />
+          {/* touch-none : le glisser / pincer déplace et zoome la carte au lieu de faire défiler la page */}
+          <svg ref={svgRef} className="touch-none" style={{ width: '100%', height: '100%' }} />
         </div>
-      </div>
-
-      {/* Boutons d'export et d'envoi par email */}
-      <div className="fixed flex space-x-4 bottom-4 right-4">
-        <button
-          onClick={async () => {
-            if (!svgRef.current) {
-              alert('Mindmap non générée');
-              return;
-            }
-            const svg = svgRef.current;
-            // Récupérer la taille réelle du SVG (fallback si non défini)
-            let width = 1200;
-            let height = 800;
-            if (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width && svg.viewBox.baseVal.height) {
-              width = svg.viewBox.baseVal.width;
-              height = svg.viewBox.baseVal.height;
-            } else if (svg.width?.baseVal?.value && svg.height?.baseVal?.value) {
-              width = svg.width.baseVal.value;
-              height = svg.height.baseVal.value;
-            } else if (svg.clientWidth && svg.clientHeight) {
-              width = svg.clientWidth;
-              height = svg.clientHeight;
-            }
-            // Convertir le SVG en base64 de façon robuste
-            const serializer = new XMLSerializer();
-            let svgString = serializer.serializeToString(svg);
-            // Corriger les caractères spéciaux pour base64
-            svgString = svgString.replace(/\uFEFF/g, '');
-            const svgBase64 = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)));
-            const img = new window.Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              if (ctx) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob((blob) => {
-                  if (blob) {
-                    const downloadUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = 'mindmap.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(downloadUrl);
-                    document.body.removeChild(a);
-                  } else {
-                    alert('Erreur lors de la génération du PNG.');
-                  }
-                }, 'image/png');
-              } else {
-                alert('Impossible de créer le contexte du canvas.');
-              }
-            };
-            img.onerror = () => {
-              alert('Erreur lors du rendu de l\'image.');
-            };
-            img.src = svgBase64;
-          }}
-          className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
-        >
-          Télécharger l'image
-        </button>
       </div>
     </div>
   );

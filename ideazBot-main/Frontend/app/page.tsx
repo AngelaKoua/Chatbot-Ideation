@@ -121,8 +121,8 @@ export default function HomePage() {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Texte principal animé */}
-        <div className="absolute top-1/6 left-1/2 transform -translate-x-1/2">
-          <div className="text-8xl font-bold text-purple-200/20 tracking-wider text-center">
+        <div className="absolute top-[16%] left-1/2 transform -translate-x-1/2">
+          <div className="text-5xl sm:text-7xl md:text-8xl font-bold text-purple-200/20 tracking-wider text-center">
             {displayedText}
           </div>
         </div>
@@ -248,14 +248,14 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-10 sm:p-6">
         {/* Hero Section */}
-        <div className="text-center mb-12 max-w-4xl">
+        <div className="text-center mb-8 sm:mb-12 max-w-4xl">
           {/* Logo principal avec halo */}
           <div className="mb-8 relative">
             <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 p-6 rounded-full inline-block shadow-2xl">
-              <Brain className="w-16 h-16 text-white animate-pulse" />
+            <div className="relative bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 p-5 sm:p-6 rounded-full inline-block shadow-2xl">
+              <Brain className="w-12 h-12 sm:w-16 sm:h-16 text-white animate-pulse" />
               <div className="absolute -top-2 -right-2 bg-yellow-400 p-1 rounded-full animate-bounce">
                 <Lightbulb className="w-4 h-4 text-yellow-800" />
               </div>
@@ -263,13 +263,14 @@ export default function HomePage() {
           </div>
 
           {/* Titre principal */}
-          <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent mb-6 animate-pulse">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent mb-6 animate-pulse">
             IdeazBot
           </h1>
           
           {/* Sous-titre avec effet de machine à écrire */}
-          <div className="text-2xl md:text-3xl font-medium text-gray-700 mb-8 overflow-hidden">
-            <div className="flex justify-center items-center space-x-4 animate-slide-left">
+          <div className="text-lg sm:text-2xl md:text-3xl font-medium text-gray-700 mb-6 sm:mb-8 overflow-hidden">
+            {/* flex-wrap : les 4 mots passent sur 2 lignes sur petit écran au lieu d'être coupés */}
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 animate-slide-left">
               {["INSPIRE", "DEVELOP", "ENGAGE", "ACHIEVE"].map((word, index) => (
                 <span
                   key={word}
@@ -286,7 +287,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
             Votre assistant IA intelligent pour l'idéation et le brainstorming créatif. 
             Générez des idées innovantes, explorez des concepts révolutionnaires et donnez vie à vos projets 
             les plus ambitieux grâce à la puissance de l'intelligence artificielle conversationnelle.
@@ -322,7 +323,7 @@ export default function HomePage() {
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-50 animate-pulse"></div>
             
             {/* Container principal */}
-            <div className="relative bg-gradient-to-br from-white/90 via-white/80 to-white/70 backdrop-blur-xl rounded-2xl p-8 border border-white/30 shadow-2xl">
+            <div className="relative bg-gradient-to-br from-white/90 via-white/80 to-white/70 backdrop-blur-xl rounded-2xl p-5 sm:p-8 border border-white/30 shadow-2xl">
               {/* Header avec animation flottante */}
               <div className="text-center mb-8 relative">
                 <div className="flex justify-center mb-6 relative">
@@ -339,10 +340,10 @@ export default function HomePage() {
                   </div>
                 </div>
                 
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 bg-clip-text text-transparent mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 bg-clip-text text-transparent mb-3">
                   Prêt à innover ?
                 </h2>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 text-base sm:text-lg">
                   Libérez le potentiel créatif de votre esprit
                 </p>
               </div>
@@ -352,30 +353,30 @@ export default function HomePage() {
                 {/* Bouton S'inscrire avec effet holographique */}
                 <Link 
                   href="/Inscription"
-                  className="group relative w-full inline-block overflow-hidden bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white font-bold py-5 px-8 rounded-2xl transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:scale-[1.03]"
+                  className="group relative w-full inline-block overflow-hidden bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:scale-[1.03]"
                 >
                   {/* Effet de lumière qui bouge */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                   
                   <div className="relative flex items-center justify-center">
-                    <Brain className="mr-3 h-6 w-6 group-hover:animate-pulse" />
-                    <span className="text-lg">Commencer l'aventure</span>
-                    <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform duration-300" />
+                    <Brain className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 group-hover:animate-pulse" />
+                    <span className="text-base sm:text-lg">Commencer l'aventure</span>
+                    <ArrowRight className="ml-2 sm:ml-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 group-hover:translate-x-2 transition-transform duration-300" />
                   </div>
                 </Link>
                 
                 {/* Bouton Se connecter avec effet néon */}
                 <Link 
                   href="/Connexion"
-                  className="group relative w-full inline-block bg-transparent border-2 border-purple-300 hover:border-purple-500 text-purple-700 hover:text-purple-800 font-bold py-5 px-8 rounded-2xl transition-all duration-300 hover:bg-purple-50/50 transform hover:scale-[1.02] overflow-hidden"
+                  className="group relative w-full inline-block bg-transparent border-2 border-purple-300 hover:border-purple-500 text-purple-700 hover:text-purple-800 font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-300 hover:bg-purple-50/50 transform hover:scale-[1.02] overflow-hidden"
                 >
                   {/* Effet néon au survol */}
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   <div className="relative flex items-center justify-center">
-                    <Users className="mr-3 h-6 w-6 group-hover:animate-bounce" />
-                    <span className="text-lg">J'ai déjà un compte</span>
-                    <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform duration-300" />
+                    <Users className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 group-hover:animate-bounce" />
+                    <span className="text-base sm:text-lg">J'ai déjà un compte</span>
+                    <ArrowRight className="ml-2 sm:ml-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 group-hover:translate-x-2 transition-transform duration-300" />
                   </div>
                 </Link>
               </div>
@@ -405,7 +406,7 @@ export default function HomePage() {
 
         {/* Section des fonctionnalités */}
         <div className="max-w-6xl w-full mb-12">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {/* Fonctionnalité 1 */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
               <div className="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-lg w-fit mb-4">

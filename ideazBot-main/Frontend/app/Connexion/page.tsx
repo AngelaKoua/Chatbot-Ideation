@@ -39,6 +39,8 @@ export default function SignIn() {
         sessionStorage.setItem('userInfo', JSON.stringify({
           email: response.user?.email,
           id: response.user?.id,
+          prenom: response.user?.prenom || '',
+          nom: response.user?.nom || '',
           loginTime: new Date().toISOString()
         }));
 
@@ -113,11 +115,11 @@ export default function SignIn() {
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="max-w-md w-full space-y-8">
+        <div className="max-w-md w-full space-y-6 sm:space-y-8">
           {/* Card with glassmorphism effect */}
           <div className="backdrop-blur-lg bg-white/80 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 p-8 text-center relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 p-6 sm:p-8 text-center relative overflow-hidden">
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-2 left-4 w-8 h-8 border border-white/30 rounded-full animate-pulse"></div>
@@ -146,7 +148,7 @@ export default function SignIn() {
             </div>
 
             {/* Form */}
-            <div className="px-8 pb-8 pt-6">
+            <div className="px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
               {error && (
                 <div className="mb-4 p-3 bg-red-50/80 border border-red-200 text-red-700 rounded-xl text-sm backdrop-blur-sm">
                   {error}
@@ -186,7 +188,7 @@ export default function SignIn() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center">
                     <input
                       id="remember-me"

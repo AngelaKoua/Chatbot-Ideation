@@ -85,24 +85,29 @@ const useAuth = () => {
           throw new Error("No token found");
         }
         
-        // Ensure we handle userInfo object from login
+        const toUserData = (data: any): UserData => ({
+          nom: data?.nom || data?.email?.split('@')[0] || "Utilisateur",
+          prenom: data?.prenom || "",
+          email: data?.email || "",
+          id: data?.id || 0
+        });
+
+        // Affichage immédiat avec les infos enregistrées à la connexion
         const storedUser = sessionStorage.getItem('userInfo');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            nom: parsedUser.nom || parsedUser.email?.split('@')[0] || "Utilisateur",
-            prenom: parsedUser.prenom || "",
-            email: parsedUser.email || "",
-            id: parsedUser.id || 0
+        setUser(toUserData(storedUser ? JSON.parse(storedUser) : null));
+
+        // Puis profil à jour depuis le serveur (prénom inclus, même pour une session ouverte avant)
+        try {
+          const res = await fetch(`${API_URL}/api/user/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
           });
-        } else {
-          // Default fallback if real user data isn't in sessionStorage but token is present
-          setUser({
-            nom: "Utilisateur",
-            prenom: "",
-            email: "",
-            id: 0
-          });
+          const data = await res.json();
+          if (res.ok && data.success && data.user) {
+            setUser(toUserData(data.user));
+            sessionStorage.setItem('userInfo', JSON.stringify({ ...data.user, loginTime: new Date().toISOString() }));
+          }
+        } catch (profileError) {
+          console.error('Profil indisponible:', profileError);
         }
       } catch (error) {
         console.error('Erreur d\'authentification:', error);
@@ -196,18 +201,25 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
   });
 
   return (
-    <div className={`fixed top-4 right-4 w-80 h-[calc(100vh-2rem)] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-purple-200/30 transform transition-all duration-500 z-50 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
+    <>
+    {/* Fond assombri sur mobile : un toucher en dehors ferme le panneau */}
+    {isOpen && (
+      <div className="fixed inset-0 z-40 bg-black/30 sm:hidden" onClick={onClose} aria-hidden="true" />
+    )}
+    {/* Plein écran sur mobile, panneau flottant à droite à partir de sm */}
+    <div className={`fixed inset-y-0 right-0 w-full sm:inset-y-4 sm:right-4 sm:w-80 flex flex-col bg-white/95 backdrop-blur-xl sm:rounded-3xl shadow-2xl border border-purple-200/30 transform transition-all duration-500 z-50 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
       }`}>
 
       {/* Header avec couleurs IdeazBot */}
-      <div className="flex items-center justify-between p-6 border-b border-purple-100/50">
+      <div className="flex items-center justify-between p-4 border-b sm:p-6 border-purple-100/50">
         <div className="flex items-center space-x-3">
           <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse"></div>
           <h3 className="font-semibold text-gray-800">Historique</h3>
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 transition-colors rounded-lg hover:text-purple-600 hover:bg-purple-50"
+          className="p-2 text-gray-400 transition-colors rounded-lg hover:text-purple-600 hover:bg-purple-50"
+          aria-label="Fermer l'historique"
         >
           <X className="w-5 h-5" />
         </button>
@@ -242,7 +254,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
       </div>
 
       {/* Conversations list */}
-      <div className="flex-1 px-4 pb-4 overflow-y-auto">
+      <div className="flex-1 min-h-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
         {filteredConversations.length === 0 ? (
           <div className="py-8 text-center text-gray-400">
             <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -274,7 +286,9 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
                       e.stopPropagation();
                       onDeleteConversation(conv.id);
                     }}
-                    className="p-1 text-gray-400 transition-all duration-200 opacity-0 group-hover:opacity-100 hover:text-red-500"
+                    /* Visible en permanence sur écran tactile, au survol avec une souris */
+                    className="p-2 -m-1 text-gray-400 transition-all duration-200 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 hover:text-red-500"
+                    aria-label="Supprimer la conversation"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -285,6 +299,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };
 
@@ -296,22 +311,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onDownload, o
   };
 
   return (
-    <div className={`flex ${isBot ? 'justify-start' : 'justify-end'} mb-6`}>
-      <div className={`flex items-start space-x-3 max-w-[80%] ${!isBot ? 'flex-row-reverse space-x-reverse' : ''}`}>
+    <div className={`flex ${isBot ? 'justify-start' : 'justify-end'} mb-4 sm:mb-6`}>
+      <div className={`flex items-start gap-2 sm:gap-3 min-w-0 max-w-full sm:max-w-[85%] lg:max-w-[80%] ${!isBot ? 'flex-row-reverse' : ''}`}>
         {/* Avatar */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ${isBot
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ${isBot
           ? 'bg-gradient-to-r from-purple-600 to-blue-600'
           : 'bg-gradient-to-r from-gray-600 to-gray-700'
           }`}>
           {isBot ? (
-            <Brain className="w-5 h-5 text-white" />
+            <Brain className="w-4 h-4 text-white sm:w-5 sm:h-5" />
           ) : (
-            <User className="w-5 h-5 text-white" />
+            <User className="w-4 h-4 text-white sm:w-5 sm:h-5" />
           )}
         </div>
 
-        {/* Message content */}
-        <div className={`p-4 rounded-2xl shadow-sm border max-w-full min-w-0 ${isBot
+        {/* Message content : les mots très longs (liens…) passent à la ligne au lieu de déborder */}
+        <div className={`p-3 sm:p-4 rounded-2xl shadow-sm border max-w-full min-w-0 [overflow-wrap:anywhere] ${isBot
           ? 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-100/50'
           : 'bg-gradient-to-br from-gray-100 to-gray-50 border-gray-200/50'
           }`}>
@@ -327,7 +342,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onDownload, o
                 remarkPlugins={[remarkGfm]}
                 components={{
                   // Personnalisation des composants Markdown
-                  h1: ({ children }) => <h1 className="pb-2 mb-3 text-xl font-bold font-black text-purple-800 border-b border-purple-200">{children}</h1>,
+                  h1: ({ children }) => <h1 className="pb-2 mb-3 text-xl font-bold text-purple-800 border-b border-purple-200">{children}</h1>,
                   h2: ({ children }) => <h2 className="mt-4 mb-2 text-lg font-bold text-purple-700">{children}</h2>,
                   h3: ({ children }) => <h3 className="mt-3 mb-2 text-base font-bold text-purple-600">{children}</h3>,
                   h4: ({ children }) => <h4 className="mt-3 mb-2 text-sm font-bold text-purple-600">{children}</h4>,
@@ -343,7 +358,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onDownload, o
                   // Tableaux (syntaxe Markdown GFM) : défilement horizontal si trop larges
                   table: ({ children }) => (
                     <div className="my-4 overflow-x-auto bg-white border border-purple-200 shadow-sm rounded-xl">
-                      <table className="min-w-full text-sm border-collapse">{children}</table>
+                      <table className="min-w-full text-sm border-collapse [overflow-wrap:normal]">{children}</table>
                     </div>
                   ),
                   thead: ({ children }) => (
@@ -354,12 +369,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onDownload, o
                   ),
                   tr: ({ children }) => <tr className="transition-colors hover:bg-purple-100/50">{children}</tr>,
                   th: ({ children }) => (
-                    <th className="px-4 py-3 text-xs font-semibold tracking-wide text-left text-white uppercase whitespace-nowrap">
+                    <th className="px-3 py-2 sm:px-4 sm:py-3 text-xs font-semibold tracking-wide text-left text-white uppercase whitespace-nowrap">
                       {children}
                     </th>
                   ),
                   td: ({ children }) => (
-                    <td className="px-4 py-3 leading-relaxed text-gray-700 align-top">{children}</td>
+                    <td className="px-3 py-2 sm:px-4 sm:py-3 min-w-[8rem] leading-relaxed text-gray-700 align-top">{children}</td>
                   ),
                   blockquote: ({ children }) => (
                     <blockquote className="py-2 pl-4 mb-3 border-l-4 border-purple-300 rounded-r-lg bg-purple-50/50">
@@ -652,7 +667,7 @@ const IdeazBotInterface = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+      <div className="flex items-center justify-center h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
         <div className="text-center">
           <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 animate-pulse">
             <Brain className="w-8 h-8 text-white" />
@@ -664,39 +679,40 @@ const IdeazBotInterface = () => {
   }
 
   return (
-    <div className="relative flex flex-col h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    // h-dvh : hauteur réellement visible (sur mobile, h-screen passe sous la barre d'adresse)
+    <div className="relative flex flex-col overflow-hidden h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       {/* Arrière-plan animé */}
       <AnimatedBackground />
 
       {/* Header avec branding IdeazBot */}
-      <header className="sticky top-0 z-10 border-b shadow-sm border-purple-200/30 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-6xl px-6 py-4 mx-auto">
-          <div className="flex items-center justify-between">
-            {/* Left side - Logo et branding */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
-                  <Brain className="w-6 h-6 text-white" />
+      <header className="sticky top-0 z-10 border-b shadow-sm border-purple-200/30 bg-white/80 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
+        <div className="max-w-6xl px-3 py-2 mx-auto sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left side - Logo et branding (sur mobile : logo + salutation seulement) */}
+            <div className="flex items-center min-w-0 gap-2 sm:gap-4">
+              <div className="flex items-center flex-shrink-0 space-x-3">
+                <div className="flex items-center justify-center shadow-lg w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
+                  <Brain className="w-5 h-5 text-white sm:w-6 sm:h-6" />
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <h1 className="text-xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
                     IdeazBot
                   </h1>
                   <p className="text-xs font-medium text-purple-500">Intelligence Créative</p>
                 </div>
               </div>
-              <div className="w-px h-8 bg-purple-200"></div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
+              <div className="flex-shrink-0 hidden w-px h-8 bg-purple-200 sm:block"></div>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-gray-800 truncate sm:text-lg">
                   {getGreeting()}, {user?.prenom || user?.nom}
                 </h2>
-                <p className="text-sm text-purple-600">Prêt à générer des idées innovantes ?</p>
+                <p className="hidden text-sm text-purple-600 truncate md:block">Prêt à générer des idées innovantes ?</p>
               </div>
             </div>
 
             {/* Right side - Actions */}
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center px-3 py-1 space-x-2 border border-green-200 rounded-full bg-gradient-to-r from-green-50 to-emerald-50">
+            <div className="flex items-center flex-shrink-0 gap-0.5 sm:gap-2">
+              <div className="items-center hidden px-3 py-1 space-x-2 border border-green-200 rounded-full lg:flex bg-gradient-to-r from-green-50 to-emerald-50">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-xs font-medium text-green-600">IA Active</span>
               </div>
@@ -715,11 +731,12 @@ const IdeazBotInterface = () => {
                 title="Historique des conversations"
               >
                 <History className="w-5 h-5" />
-                <div className="absolute flex items-center justify-center w-3 h-3 rounded-full -top-1 -right-1 bg-gradient-to-r from-purple-500 to-blue-500">
-                  <span className="text-xs font-bold text-white">{conversations.length}</span>
+                {/* Pastille qui s'élargit si le nombre a plusieurs chiffres */}
+                <div className="absolute flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full -top-1 -right-1 bg-gradient-to-r from-purple-500 to-blue-500">
+                  <span className="text-[10px] font-bold leading-none text-white">{conversations.length}</span>
                 </div>
               </button>
-              <div className="w-px h-6 mx-1 bg-purple-200"></div>
+              <div className="hidden w-px h-6 mx-1 bg-purple-200 sm:block"></div>
               <button
                 onClick={handleLogout}
                 className="p-2 text-purple-600 transition-colors hover:bg-red-50 hover:text-red-600 rounded-xl"
@@ -734,22 +751,22 @@ const IdeazBotInterface = () => {
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="relative flex-1 min-h-0 overflow-hidden">
         <div className="flex flex-col h-full max-w-5xl mx-auto">
           {/* Messages */}
-          <div className="flex-1 px-6 pt-6 overflow-y-auto">
+          <div className="flex-1 min-h-0 px-3 pt-4 overflow-y-auto sm:px-6 sm:pt-6">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="flex items-center justify-center w-20 h-20 mb-6 shadow-xl bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl">
-                  <Lightbulb className="w-10 h-10 text-white" />
+              <div className="flex flex-col items-center justify-center min-h-full px-2 py-6 text-center">
+                <div className="flex items-center justify-center w-16 h-16 mb-4 shadow-xl sm:w-20 sm:h-20 sm:mb-6 bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl">
+                  <Lightbulb className="w-8 h-8 text-white sm:w-10 sm:h-10" />
                 </div>
-                <h2 className="mb-3 text-3xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
+                <h2 className="mb-3 text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
                   Créons ensemble votre prochaine grande idée
                 </h2>
-                <p className="max-w-lg mb-8 text-lg text-gray-600">
+                <p className="max-w-lg mb-6 text-base text-gray-600 sm:mb-8 sm:text-lg">
                   Décrivez votre projet, vos défis ou vos objectifs. IdeazBot vous accompagne avec des insights personnalisés et des solutions créatives.
                 </p>
-                <div className="flex items-center space-x-6">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
                   <div className="flex items-center space-x-2 text-purple-600">
                     <Sparkles className="w-5 h-5" />
                     <span className="text-sm font-medium">Génération d'idées</span>
@@ -775,12 +792,12 @@ const IdeazBotInterface = () => {
                   />
                 ))}
                 {isLoading && (
-                  <div className="flex justify-start mb-6">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full shadow-lg bg-gradient-to-r from-purple-600 to-blue-600">
-                        <Brain className="w-5 h-5 text-white" />
+                  <div className="flex justify-start mb-4 sm:mb-6">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full shadow-lg sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600">
+                        <Brain className="w-4 h-4 text-white sm:w-5 sm:h-5" />
                       </div>
-                      <div className="p-4 border bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-purple-100/50">
+                      <div className="p-3 border sm:p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-purple-100/50">
                         <div className="flex space-x-1">
                           {[...Array(3)].map((_, i) => (
                             <div
@@ -800,8 +817,8 @@ const IdeazBotInterface = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input area avec design IdeazBot */}
-          <div className="p-6 border-t border-purple-200/30 bg-white/50 backdrop-blur-sm">
+          {/* Input area avec design IdeazBot (marge du bas : barre d'accueil des iPhone) */}
+          <div className="px-3 pt-3 sm:px-6 sm:pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-purple-200/30 bg-white/50 backdrop-blur-sm">
               <>
                 {/* Fichiers uploadés */}
                 {uploadedFiles.length > 0 && (
@@ -823,23 +840,24 @@ const IdeazBotInterface = () => {
                   </div>
                 )}
 
-                <div className="flex items-end space-x-3">
-                  <div className="relative flex-1">
+                <div className="flex items-end gap-2 sm:gap-3">
+                  <div className="relative flex-1 min-w-0">
+                    {/* text-base (16px) : évite le zoom automatique d'iOS sur les champs de saisie */}
                     <textarea
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Décrivez votre idée, votre projet ou posez votre question..."
-                      className="w-full p-4 text-gray-900 placeholder-gray-500 transition-all duration-200 border-2 outline-none resize-none border-purple-200/50 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-white/80 backdrop-blur-sm"
-                      rows={3}
+                      className="w-full p-3 pb-6 text-base text-gray-900 placeholder-gray-500 transition-all duration-200 border-2 outline-none resize-none sm:p-4 sm:pb-6 sm:min-h-[6.5rem] border-purple-200/50 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-white/80 backdrop-blur-sm"
+                      rows={2}
                     />
-                    <div className="absolute text-xs text-purple-400 bottom-2 right-2">
+                    <div className="absolute text-xs text-purple-400 pointer-events-none bottom-3 right-3">
                       {inputText.length}/1000
                     </div>
                   </div>
 
                   {/* Actions toolbar */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-1 pb-2 sm:gap-2">
                     <FileUpload
                       onFileUpload={handleFileUpload}
                       disabled={isLoading}
@@ -847,7 +865,8 @@ const IdeazBotInterface = () => {
                     <button
                       onClick={handleSendMessage}
                       disabled={(!inputText.trim() && uploadedFiles.length === 0) || isLoading}
-                      className="p-4 text-white transition-all duration-200 transform shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 rounded-2xl disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 disabled:transform-none"
+                      aria-label="Envoyer"
+                      className="p-3 text-white transition-all duration-200 transform shadow-lg sm:p-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 rounded-2xl disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 disabled:transform-none"
                     >
                       {isLoading ? (
                         <div className="flex space-x-1">
@@ -866,8 +885,9 @@ const IdeazBotInterface = () => {
                   </div>
                 </div>
               </>
-            <div className="flex items-center justify-between mt-3 text-xs text-purple-500">
-              <span>Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne</span>
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-purple-500 sm:justify-between sm:mt-3">
+              {/* Raccourcis clavier inutiles sur écran tactile */}
+              <span className="hidden sm:inline">Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne</span>
               <span>Propulsé par IdeazBot AI</span>
             </div>
           </div>

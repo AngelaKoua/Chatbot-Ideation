@@ -61,7 +61,7 @@ export default function SignUp() {
     setSuccess('');
 
     // Vérification des champs
-    if (!formData.email || !formData.password) {
+    if (!formData.prenom.trim() || !formData.email || !formData.password) {
       setError('Veuillez remplir tous les champs obligatoires');
       setLoading(false);
       return;
@@ -76,7 +76,9 @@ export default function SignUp() {
     try {
       const response = await authApi.register({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        prenom: formData.prenom.trim(),
+        nom: formData.nom.trim()
       });
 
       if (response.success) {
@@ -106,7 +108,7 @@ export default function SignUp() {
       <div className="absolute inset-0 overflow-hidden">
         {/* Texte INNOVATION animé */}
         <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="text-6xl font-bold text-purple-200/30 tracking-wider">
+          <div className="text-4xl sm:text-6xl font-bold text-purple-200/30 tracking-wider">
             {displayedText}
             <span className="animate-pulse">|</span>
           </div>
@@ -192,11 +194,11 @@ export default function SignUp() {
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="max-w-md w-full space-y-8">
+        <div className="max-w-md w-full space-y-6 sm:space-y-8">
           {/* Card with glassmorphism effect */}
           <div className="backdrop-blur-lg bg-white/80 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 p-8 text-center relative overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 p-6 sm:p-8 text-center relative overflow-hidden">
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-2 left-4 w-8 h-8 border border-white/30 rounded-full animate-pulse"></div>
@@ -227,7 +229,7 @@ export default function SignUp() {
             </div>
 
             {/* Form - CORRECTION PRINCIPALE ICI */}
-            <div className="px-8 pb-8 pt-6">
+            <div className="px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
               {error && (
                 <div className="mb-4 p-3 bg-red-50/80 border border-red-200 text-red-700 rounded-xl text-sm backdrop-blur-sm">
                   {error}
@@ -242,7 +244,7 @@ export default function SignUp() {
               
               {/* FORMULAIRE AVEC ONSUBMIT */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="prenom" className="block text-sm font-medium text-gray-700 mb-2">
                       Prénom

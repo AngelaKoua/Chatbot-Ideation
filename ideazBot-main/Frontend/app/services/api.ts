@@ -10,6 +10,8 @@ interface AuthResponse {
   user?: {
     id: number;
     email: string;
+    prenom?: string | null;
+    nom?: string | null;
   };
   error?: string;
   message?: string;
@@ -22,7 +24,7 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:500
 const FLASK_API_URL = API_URL;
 
 export const authApi = {
-  async register(userData: { email: string; password: string }): Promise<AuthResponse> {
+  async register(userData: { email: string; password: string; prenom: string; nom: string }): Promise<AuthResponse> {
     try {
       const response = await fetch(`${FLASK_API_URL}/api/auth/signup`, {
         method: 'POST',
