@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import markdown
 import datetime
+from sqlalchemy import inspect, text
 from sqlalchemy.sql import func
 import re
 import traceback
@@ -72,12 +73,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    prenom = db.Column(db.String(100), nullable=True)
+    nom = db.Column(db.String(100), nullable=True)
     conversations = db.relationship('Conversation', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
         return {
             'id': self.id,
-            'email': self.email
+            'email': self.email,
+            'prenom': self.prenom,
+            'nom': self.nom
         }
 
 class Conversation(db.Model):
@@ -114,9 +119,19 @@ class Message(db.Model):
             'createdAt': to_utc_iso(self.created_at)
         }
 
+def add_missing_user_columns():
+    """create_all() ne modifie pas une table existante : on ajoute les nouvelles colonnes à la main"""
+    existing = {col['name'] for col in inspect(db.engine).get_columns('user')}
+    for column in ('prenom', 'nom'):
+        if column not in existing:
+            # « user » est un mot réservé en PostgreSQL : guillemets obligatoires
+            db.session.execute(text(f'ALTER TABLE "user" ADD COLUMN {column} VARCHAR(100)'))
+    db.session.commit()
+
 # Créer les tables
 with app.app_context():
     db.create_all()
+    add_missing_user_columns()
 
 # Configuration de l'API Groq
 client = Groq(api_key=os.getenv('GROQ_API_KEY'))
@@ -145,9 +160,13 @@ def signup():
             
         email = data.get('email')
         password = data.get('password')
+        prenom = (data.get('prenom') or '').strip()[:100]
+        nom = (data.get('nom') or '').strip()[:100]
 
         if not email or not password:
             return jsonify({'error': 'Email et mot de passe requis'}), 400
+        if not prenom:
+            return jsonify({'error': 'Prénom requis'}), 400
 
         # Vérifier si l'utilisateur existe déjà
         if User.query.filter_by(email=email).first():
@@ -155,7 +174,7 @@ def signup():
 
         # Créer un nouvel utilisateur
         hashed_password = generate_password_hash(password)
-        new_user = User(email=email, password=hashed_password)
+        new_user = User(email=email, password=hashed_password, prenom=prenom, nom=nom or None)
         db.session.add(new_user)
         db.session.commit()
 
