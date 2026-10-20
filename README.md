@@ -8,19 +8,34 @@ IdeazBot is a full-stack web application: a **Next.js** frontend, a **Flask** RE
 
 ## Table of contents
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech stack](#tech-stack)
-- [Repository structure](#repository-structure)
-- [Getting started (local development)](#getting-started-local-development)
-- [Configuration](#configuration)
-- [How the AI works](#how-the-ai-works)
-- [Database](#database)
-- [API reference](#api-reference)
-- [Deployment](#deployment)
-- [Security notes](#security-notes)
-- [Troubleshooting](#troubleshooting)
-- [Known limitations and ideas for improvement](#known-limitations-and-ideas-for-improvement)
+- [IdeazBot](#ideazbot)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [Architecture](#architecture)
+  - [Tech stack](#tech-stack)
+  - [Repository structure](#repository-structure)
+  - [Getting started (local development)](#getting-started-local-development)
+    - [Prerequisites](#prerequisites)
+    - [1. Backend (Flask API)](#1-backend-flask-api)
+    - [2. Frontend (Next.js)](#2-frontend-nextjs)
+    - [Useful scripts (frontend)](#useful-scripts-frontend)
+  - [Configuration](#configuration)
+    - [Backend: `ideazBot-main/Projet_de_LLM/backend_flask/Backend/.env`](#backend-ideazbot-mainprojet_de_llmbackend_flaskbackendenv)
+    - [Frontend: `ideazBot-main/Frontend/.env.local`](#frontend-ideazbot-mainfrontendenvlocal)
+  - [How the AI works](#how-the-ai-works)
+    - [One system prompt, several kinds of answer](#one-system-prompt-several-kinds-of-answer)
+    - [Ideation report format](#ideation-report-format)
+    - [Context window](#context-window)
+    - [Mind map generation](#mind-map-generation)
+  - [Database](#database)
+  - [API reference](#api-reference)
+  - [Deployment](#deployment)
+    - [1. Database: Neon (PostgreSQL)](#1-database-neon-postgresql)
+    - [2. Backend: Render](#2-backend-render)
+    - [3. Frontend: Vercel](#3-frontend-vercel)
+    - [4. Connect the two](#4-connect-the-two)
+  - [Security notes](#security-notes)
+  - [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -40,6 +55,7 @@ IdeazBot is a full-stack web application: a **Next.js** frontend, a **Flask** RE
 
 **Accounts and history**
 - Sign-up with first name, last name, email and password, plus JWT-based login. The greeting uses the user's first name.
+- Protected pages send visitors without a valid session back to the login page.
 - Every conversation is saved: users can reopen, search and delete their conversations and continue any of them.
 - Conversations can be downloaded as a text file.
 
@@ -183,8 +199,7 @@ Open <http://localhost:3000>. By default the frontend talks to `http://localhost
 | `JWT_SECRET_KEY` | **Yes in production** | development key | Secret used to sign login tokens, at least 32 bytes. The server refuses to start without it when `DATABASE_URL` is set |
 | `DATABASE_URL` | No | `sqlite:///users.db` | Database URL. Use a PostgreSQL URL in production (`postgresql://…?sslmode=require`). `postgres://` URLs are converted automatically |
 | `FRONTEND_URL` | No | `http://localhost:3000` | Origin(s) allowed by CORS, comma-separated, without a trailing slash |
-| `EMAIL_USER`, `EMAIL_PASSWORD` | No | – | SMTP credentials for `/api/mindmap/send-email` (e.g. a Gmail *app password*) |
-| `SMTP_SERVER`, `SMTP_PORT` | No | `smtp.gmail.com`, `587` | SMTP server |
+| `RATELIMIT_STORAGE_URI` | No | `memory://` | Where rate-limit counters are stored. In memory is enough with a single Gunicorn worker; with several workers or instances, use Redis (`redis://…`, requires the `redis` package) |
 | `PORT` | No | `5000` | Port for `python app.py`. In production, Gunicorn reads the host's `PORT` |
 
 ### Frontend: `ideazBot-main/Frontend/.env.local`
@@ -265,19 +280,26 @@ All protected routes expect an `Authorization: Bearer <token>` header. Tokens ar
 |---|---|---|---|
 | `GET` | `/` | – | API info |
 | `GET` | `/api/health` | – | Health check, returns `{"status": "healthy"}` |
-| `POST` | `/api/auth/signup` | – | Create an account. Body: `{email, password, prenom, nom}` |
-| `POST` | `/api/auth/login` | – | Log in. Returns `{token, user}` |
+| `POST` | `/api/auth/signup` | – | Create an account. Body: `{email, password, prenom, nom}`. The email is lower-cased; the password needs at least 8 characters, including a letter and a digit |
+| `POST` | `/api/auth/login` | – | Log in (email is case-insensitive). Returns `{token, user}` |
 | `GET` | `/api/user/profile` | ✔ | Current user (`id`, `email`, `prenom`, `nom`) |
 | `GET` | `/api/conversations` | ✔ | The user's conversations, newest first |
 | `GET` | `/api/conversations/<id>` | ✔ | Messages of a conversation, in order |
 | `DELETE` | `/api/conversations/<id>` | ✔ | Delete a conversation and its messages |
-| `POST` | `/api/chat` | ✔ | Send a message. Body: `{message, conversationId?}`. Returns `{message, conversationId}` |
-| `POST` | `/api/chat/start` | ✔ | Create a conversation with a welcome message |
+| `POST` | `/api/chat` | ✔ | Send a message (at most 2,000 characters). Body: `{message, conversationId?}`. Returns `{message, conversationId}` |
 | `POST` | `/api/mindmap/generate` | ✔ | Condense an answer into a mind map. Body: `{content}`. Returns `{markdown}` |
-| `POST` | `/api/mindmap/export` | ✔ | Export Markdown content as `markdown` or styled `html` |
-| `POST` | `/api/mindmap/send-email` | ✔ | Email some content, or the latest answer of a conversation. Requires SMTP configuration |
 
 Users can only read or modify their own conversations: every query is filtered by the authenticated user ID.
+
+Errors are always returned as `{"success": false, "error": "…"}`. Unexpected errors return a generic message; the details are only written to the server logs.
+
+**Rate limits** (Flask-Limiter). Requests over the limit get a `429`.
+
+| Route | Limit | Counted per |
+|---|---|---|
+| `/api/auth/signup` | 20 per hour | IP address |
+| `/api/auth/login` | 20 per minute, 200 per hour | IP address |
+| `/api/chat`, `/api/mindmap/generate` | 10 per minute, 200 per day | User |
 
 **Example**
 
@@ -341,7 +363,8 @@ Both Render and Vercel redeploy automatically on every push to `main`.
 - **JWT key:** use a different, random key of at least 32 bytes in production. Changing it logs every user out.
 - **Passwords** are hashed (scrypt). Tokens are stored in the browser's `localStorage` and expire after 24 hours.
 - **CORS** is restricted to the origins listed in `FRONTEND_URL`.
-- **LLM cost and abuse:** anyone who signs up uses your Groq quota. Before a public launch, consider adding rate limiting, for example with Flask-Limiter.
+- **LLM cost and abuse:** anyone who signs up uses your Groq quota. Per-user rate limits cap this (see [API reference](#api-reference)); adjust them in `app.py` if needed.
+- **Error messages** never include internal details (SQL, stack traces); those stay in the server logs.
 
 ---
 
@@ -356,12 +379,8 @@ Both Render and Vercel redeploy automatically on every push to `main`.
 | Backend won't start: `JWT_SECRET_KEY doit être défini en production` | `DATABASE_URL` is set but `JWT_SECRET_KEY` isn't. Add it |
 | `psycopg2.OperationalError` | Wrong or incomplete `DATABASE_URL`. Copy it again from the database provider |
 | Very slow first response in production | The free Render instance was asleep. This is expected |
+| `429` / "Trop de requêtes" | A rate limit was reached. Wait a minute, or raise the limits in `app.py` |
 
 ---
 
-## Known limitations and ideas for improvement
 
-- **No migration framework:** only the `prenom` / `nom` columns are added automatically. Adopting Flask-Migrate would make future schema changes safer.
-- **File attachments are not processed:** the paperclip button lets users pick files, but their content isn't sent to the model.
-- **Linting:** the ESLint configuration (`eslint-config-next` 14 with ESLint 8) doesn't match Next.js 15, so the lint step is skipped during builds. Upgrading ESLint would re-enable it.
-- **Possible next steps:** response streaming, rate limiting, password reset ("Forgot password?" is not implemented yet), profile editing, and automated tests for the API.

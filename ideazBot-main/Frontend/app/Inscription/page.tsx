@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { UserPlus, User, Mail, Lock, Lightbulb, Sparkles, Brain, Zap } from "lucide-react";
-import { authApi } from '../services/api';
+import { authApi, PASSWORD_MIN_LENGTH } from '../services/api';
 
 interface FormData {
   nom: string;
@@ -63,6 +63,13 @@ export default function SignUp() {
     // Vérification des champs
     if (!formData.prenom.trim() || !formData.email || !formData.password) {
       setError('Veuillez remplir tous les champs obligatoires');
+      setLoading(false);
+      return;
+    }
+
+    // Même règle que le backend, vérifiée ici pour un retour immédiat
+    if (formData.password.length < PASSWORD_MIN_LENGTH || !/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      setError(`Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères, dont une lettre et un chiffre`);
       setLoading(false);
       return;
     }
@@ -308,9 +315,13 @@ export default function SignUp() {
                     value={formData.password}
                     onChange={handleChange}
                     disabled={loading}
+                    aria-describedby="password-hint"
                     className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-purple-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 hover:bg-white/80 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="••••••••"
                   />
+                  <p id="password-hint" className="mt-1 text-xs text-gray-500">
+                    Au moins {PASSWORD_MIN_LENGTH} caractères, dont une lettre et un chiffre
+                  </p>
                 </div>
 
                 <div>

@@ -74,7 +74,6 @@ const MindmapPage = () => {
   const [status, setStatus] = useState<'loading' | 'ready' | 'fallback'>('loading');
   const svgRef = useRef<SVGSVGElement>(null);
   const markmapRef = useRef<Markmap | null>(null);
-  const [exportFormat, setExportFormat] = useState<'markdown' | 'html' | 'png'>('markdown');
 
   useEffect(() => {
     const data = localStorage.getItem('mindmapData');
@@ -170,99 +169,6 @@ const MindmapPage = () => {
       }
     };
   }, [markdown]);
-
-  // Fonction pour exporter la mindmap
-  const handleExport = async () => {
-    try {
-      if (!mindmapData?.messages.length) {
-        alert('Aucune donnée à exporter');
-        return;
-      }
-
-      if (exportFormat === 'png') {
-        // Pour le format PNG, on exporte directement le SVG visible
-        if (!svgRef.current) {
-          throw new Error('Le SVG n\'est pas disponible');
-        }
-
-        // Créer une copie du SVG pour la manipulation
-        const svgClone = svgRef.current.cloneNode(true) as SVGSVGElement;
-        const svgData = new XMLSerializer().serializeToString(svgClone);
-
-        // Créer un canvas pour convertir le SVG en PNG
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-
-        // Définir la taille du canvas
-        canvas.width = svgRef.current.clientWidth;
-        canvas.height = svgRef.current.clientHeight;
-
-        // Convertir le SVG en PNG
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-
-        img.onload = () => {
-          if (ctx) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'mindmap.png';
-                document.body.appendChild(a);
-                a.click();
-                URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-              }
-            }, 'image/png');
-          }
-        };
-        img.src = url;
-        return;
-      }
-
-      // Pour les autres formats, on envoie au backend
-      const response = await fetch(`${API_URL}/api/mindmap/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          format: exportFormat,
-          content: markdown
-        })
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Erreur lors de l\'export');
-      }
-
-      // Pour les formats markdown et HTML
-      const content = exportFormat === 'html' ? data.content : markdown;
-      const type = exportFormat === 'html' ? 'text/html' : 'text/markdown';
-      const extension = exportFormat === 'html' ? 'html' : 'md';
-
-      const blob = new Blob([content], { type });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mindmap.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erreur lors de l\'export:', error);
-      alert('Erreur lors de l\'export: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
 
   if (!mindmapData) {
     return (

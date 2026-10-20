@@ -1,27 +1,29 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from groq import Groq
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, verify_jwt_in_request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import markdown
 import datetime
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 import re
-import traceback
 import groq
 
 # Charger les variables d'environnement
 load_dotenv(override=True)
 
 app = Flask(__name__)
+# En ligne, l'API est derrière le proxy de l'hébergeur : l'IP du client est dans X-Forwarded-For
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 # Origines autorisées à appeler l'API : FRONTEND_URL (plusieurs URLs séparées par des virgules)
 frontend_origins = [
@@ -59,6 +61,52 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+
+
+def rate_limit_key():
+    """Limite par utilisateur connecté, sinon par adresse IP"""
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+    except Exception:
+        # Token invalide ou expiré : la route le refusera ensuite, on compte par IP
+        user_id = None
+    return f"user:{user_id}" if user_id else f"ip:{get_remote_address()}"
+
+
+# Compteurs en mémoire par défaut (un seul processus) ; RATELIMIT_STORAGE_URI=redis://… pour les partager
+limiter = Limiter(
+    key_func=rate_limit_key,
+    app=app,
+    storage_uri=os.getenv('RATELIMIT_STORAGE_URI') or 'memory://',
+)
+
+# Limites par route : protègent le quota Groq et les mots de passe.
+# Inscription et connexion sont comptées par IP : assez larges pour un réseau partagé (école, démo)
+SIGNUP_LIMIT = "20 per hour"
+LOGIN_LIMIT = "20 per minute;200 per hour"
+LLM_LIMIT = "10 per minute;200 per day"
+
+
+@app.errorhandler(429)
+def handle_rate_limit(error):
+    return jsonify({
+        'success': False,
+        'error': "Trop de requêtes : patientez un peu avant de réessayer"
+    }), 429
+
+
+@app.errorhandler(HTTPException)
+def handle_http_error(error):
+    return jsonify({'success': False, 'error': error.description}), error.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Le détail de l'erreur reste dans les logs du serveur, jamais dans la réponse"""
+    db.session.rollback()
+    app.logger.exception("Erreur inattendue sur %s %s", request.method, request.path)
+    return jsonify({'success': False, 'error': 'Erreur interne du serveur'}), 500
 
 def to_utc_iso(value):
     """SQLite renvoie des dates sans fuseau, mais CURRENT_TIMESTAMP est en UTC"""
@@ -151,99 +199,100 @@ def index():
 def health_check():
     return jsonify({'status': 'healthy'})
 
+EMAIL_PATTERN = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 128
+
+
+def normalize_email(value):
+    """Jane@X.com et jane@x.com désignent le même compte"""
+    return (value or '').strip().lower()
+
+
+def find_user_by_email(email):
+    # lower() côté base : retrouve aussi les comptes créés avant la normalisation
+    return User.query.filter(func.lower(User.email) == email).first()
+
+
+def password_error(password):
+    """Message d'erreur si le mot de passe est trop faible, sinon None"""
+    if len(password) < PASSWORD_MIN_LENGTH:
+        return f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères"
+    if len(password) > PASSWORD_MAX_LENGTH:
+        return f"Le mot de passe doit contenir au plus {PASSWORD_MAX_LENGTH} caractères"
+    if not re.search(r'[A-Za-z]', password) or not re.search(r'\d', password):
+        return "Le mot de passe doit contenir au moins une lettre et un chiffre"
+    return None
+
+
 @app.route('/api/auth/signup', methods=['POST'])
+@limiter.limit(SIGNUP_LIMIT)
 def signup():
+    data = request.get_json(silent=True) or {}
+    email = normalize_email(data.get('email'))
+    password = data.get('password') or ''
+    prenom = (data.get('prenom') or '').strip()[:100]
+    nom = (data.get('nom') or '').strip()[:100]
+
+    if not email or not password:
+        return jsonify({'success': False, 'error': 'Email et mot de passe requis'}), 400
+    if len(email) > 120 or not EMAIL_PATTERN.match(email):
+        return jsonify({'success': False, 'error': 'Adresse email invalide'}), 400
+    if not prenom:
+        return jsonify({'success': False, 'error': 'Prénom requis'}), 400
+    weak = password_error(password)
+    if weak:
+        return jsonify({'success': False, 'error': weak}), 400
+
+    if find_user_by_email(email):
+        return jsonify({'success': False, 'error': 'Cet email est déjà utilisé'}), 400
+
+    new_user = User(email=email, password=generate_password_hash(password), prenom=prenom, nom=nom or None)
+    db.session.add(new_user)
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Aucune donnée reçue'}), 400
-            
-        email = data.get('email')
-        password = data.get('password')
-        prenom = (data.get('prenom') or '').strip()[:100]
-        nom = (data.get('nom') or '').strip()[:100]
-
-        if not email or not password:
-            return jsonify({'error': 'Email et mot de passe requis'}), 400
-        if not prenom:
-            return jsonify({'error': 'Prénom requis'}), 400
-
-        # Vérifier si l'utilisateur existe déjà
-        if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Cet email est déjà utilisé'}), 400
-
-        # Créer un nouvel utilisateur
-        hashed_password = generate_password_hash(password)
-        new_user = User(email=email, password=hashed_password, prenom=prenom, nom=nom or None)
-        db.session.add(new_user)
         db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Inscription réussie',
-            'user': new_user.to_dict()
-        })
-
-    except Exception as e:
+    except IntegrityError:
+        # Deux inscriptions simultanées avec le même email
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': 'Cet email est déjà utilisé'}), 400
+
+    return jsonify({
+        'success': True,
+        'message': 'Inscription réussie',
+        'user': new_user.to_dict()
+    })
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit(LOGIN_LIMIT)
 def login():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Aucune donnée reçue'}), 400
-            
-        email = data.get('email')
-        password = data.get('password')
+    data = request.get_json(silent=True) or {}
+    email = normalize_email(data.get('email'))
+    password = data.get('password') or ''
 
-        if not email or not password:
-            return jsonify({'error': 'Email et mot de passe requis'}), 400
+    if not email or not password:
+        return jsonify({'success': False, 'error': 'Email et mot de passe requis'}), 400
 
-        # Vérifier les identifiants
-        user = User.query.filter_by(email=email).first()
-        if not user or not check_password_hash(user.password, password):
-            return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
+    user = find_user_by_email(email)
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({'success': False, 'error': 'Email ou mot de passe incorrect'}), 401
 
-        # Créer le token JWT
-        access_token = create_access_token(identity=str(user.id))
-        
-        return jsonify({
-            'success': True,
-            'token': access_token,
-            'user': user.to_dict()
-        })
+    return jsonify({
+        'success': True,
+        'token': create_access_token(identity=str(user.id)),
+        'user': user.to_dict()
+    })
 
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# Route protégée pour tester l'authentification
 @app.route('/api/user/profile', methods=['GET'])
 @jwt_required()
 def get_user_profile():
-    try:
-        current_user_id = int(get_jwt_identity())
-        user = User.query.get(current_user_id)
-        
-        if not user:
-            return jsonify({'error': 'Utilisateur non trouvé'}), 404
-            
-        return jsonify({
-            'success': True,
-            'user': user.to_dict()
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    user = db.session.get(User, int(get_jwt_identity()))
+    if not user:
+        return jsonify({'success': False, 'error': 'Utilisateur non trouvé'}), 404
+
+    return jsonify({
+        'success': True,
+        'user': user.to_dict()
+    })
 
 # Modèle Groq utilisé (modifiable via GROQ_MODEL dans le .env)
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b')
@@ -251,11 +300,8 @@ GROQ_MODEL = os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b')
 # Limite de l'historique envoyé au modèle (en caractères) pour rester sous les quotas de tokens
 MAX_HISTORY_CHARS = 12000
 
-WELCOME_MESSAGE = (
-    "Bonjour ! Je suis IdeazBot, votre assistant en idéation créative. "
-    "Parlez-moi de votre projet, de votre défi ou de votre besoin, et je vous aiderai "
-    "à générer, approfondir et évaluer des idées adaptées."
-)
+# Taille maximale d'un message utilisateur (même limite dans le frontend)
+MAX_MESSAGE_CHARS = 2000
 
 SYSTEM_PROMPT = """Tu es IdeazBot, un assistant expert en idéation créative et en innovation. Tu aides l'utilisateur à trouver, développer et évaluer des idées pour ses projets.
 
@@ -388,244 +434,108 @@ def make_preview(text, length=120):
     return plain[:length - 3] + "..." if len(plain) > length else plain
 
 
-def markdown_to_html_document(markdown_text):
-    """Convertit du Markdown en page HTML simple, lisible dans un client mail"""
-    html = markdown.markdown(markdown_text, extensions=['tables'])
-    return f"""<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #1f2937; }}
-        h1, h2, h3 {{ color: #6d28d9; }}
-        table {{ border-collapse: collapse; width: 100%; }}
-        th, td {{ border: 1px solid #ddd6fe; padding: 6px 10px; text-align: left; }}
-        th {{ background: #ede9fe; }}
-    </style>
-</head>
-<body>
-{html}
-</body>
-</html>"""
-
-
-class EmailConfigError(Exception):
-    """Les identifiants SMTP ne sont pas définis dans le .env"""
-
-
-def send_email_smtp(to_email, subject, content, format='html'):
-    """Envoie un email via SMTP (identifiants lus dans le .env)"""
-    smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-    smtp_port = int(os.getenv('SMTP_PORT', '587'))
-    email_user = os.getenv('EMAIL_USER')
-    email_password = os.getenv('EMAIL_PASSWORD')
-
-    if not email_user or not email_password:
-        raise EmailConfigError(
-            "Envoi d'email non configuré : ajoutez EMAIL_USER et EMAIL_PASSWORD "
-            "(mot de passe d'application) dans le fichier .env"
-        )
-
-    msg = MIMEMultipart('alternative')
-    msg['From'] = email_user
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    # Version texte toujours présente, version HTML en plus si demandée
-    msg.attach(MIMEText(content, 'plain', 'utf-8'))
-    if format == 'html':
-        msg.attach(MIMEText(markdown_to_html_document(content), 'html', 'utf-8'))
-
-    with smtplib.SMTP(smtp_server, smtp_port, timeout=20) as server:
-        server.starttls()
-        server.login(email_user, email_password)
-        server.send_message(msg)
-
-
 @app.route('/api/conversations', methods=['GET'])
 @jwt_required()
 def get_conversations():
-    try:
-        current_user_id = int(get_jwt_identity())
-        conversations = Conversation.query.filter_by(user_id=current_user_id).order_by(Conversation.created_at.desc()).all()
-        
-        return jsonify({
-            'success': True,
-            'conversations': [c.to_dict() for c in conversations]
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    current_user_id = int(get_jwt_identity())
+    conversations = Conversation.query.filter_by(user_id=current_user_id).order_by(Conversation.created_at.desc()).all()
+
+    return jsonify({
+        'success': True,
+        'conversations': [c.to_dict() for c in conversations]
+    })
 
 @app.route('/api/conversations/<int:conversation_id>', methods=['GET'])
 @jwt_required()
 def get_conversation_messages(conversation_id):
-    try:
-        current_user_id = int(get_jwt_identity())
-        conversation = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
-        
-        if not conversation:
-            return jsonify({'error': 'Conversation non trouvée'}), 404
-            
-        messages = Message.query.filter_by(conversation_id=conversation.id).order_by(Message.id.asc()).all()
-        
-        # Formater comme attendu par le frontend
-        formatted_messages = []
-        for msg in messages:
-            formatted_messages.append(msg.to_dict())
-            
-        return jsonify({
-            'success': True,
-            'messages': formatted_messages
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    current_user_id = int(get_jwt_identity())
+    conversation = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
+    if not conversation:
+        return jsonify({'success': False, 'error': 'Conversation non trouvée'}), 404
+
+    messages = Message.query.filter_by(conversation_id=conversation.id).order_by(Message.id.asc()).all()
+    return jsonify({
+        'success': True,
+        'messages': [msg.to_dict() for msg in messages]
+    })
 
 @app.route('/api/conversations/<int:conversation_id>', methods=['DELETE'])
 @jwt_required()
 def delete_conversation(conversation_id):
-    try:
-        current_user_id = int(get_jwt_identity())
-        conversation = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
-        
-        if not conversation:
-            return jsonify({'error': 'Conversation non trouvée'}), 404
-            
-        db.session.delete(conversation)
-        db.session.commit()
-        
-            
-        return jsonify({
-            'success': True,
-            'message': 'Conversation supprimée'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    current_user_id = int(get_jwt_identity())
+    conversation = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
+    if not conversation:
+        return jsonify({'success': False, 'error': 'Conversation non trouvée'}), 404
 
-@app.route('/api/chat/start', methods=['POST'])
-@jwt_required()
-def start_chat():
-    try:
-        current_user_id = int(get_jwt_identity())
-        
-        # Créer une nouvelle conversation en base de données
-        new_conv = Conversation(user_id=current_user_id, title="Nouvelle conversation")
-        db.session.add(new_conv)
-        db.session.commit()
-        
-        
-        welcome_message = WELCOME_MESSAGE
-        
-        # Sauvegarder le message de bienvenue (bot)
-        bot_msg = Message(conversation_id=new_conv.id, content=welcome_message, is_bot=True)
-        db.session.add(bot_msg)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'conversationId': new_conv.id,
-            'message': welcome_message
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    db.session.delete(conversation)
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'message': 'Conversation supprimée'
+    })
 
 @app.route('/api/chat', methods=['POST'])
+@limiter.limit(LLM_LIMIT)
 @jwt_required()
 def chat():
-    try:
-        current_user_id = int(get_jwt_identity())
-        data = request.get_json(silent=True) or {}
-        message = (data.get('message') or '').strip()
-        conversation_id = data.get('conversationId')
+    current_user_id = int(get_jwt_identity())
+    data = request.get_json(silent=True) or {}
+    message = (data.get('message') or '').strip()
+    conversation_id = data.get('conversationId')
 
-        if not message:
-            return jsonify({'error': 'Message requis'}), 400
-
-        title = message[:50] + "..." if len(message) > 50 else message
-
-        if conversation_id:
-            # Vérifier l'appartenance
-            conv = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
-            if not conv:
-                return jsonify({'error': 'Conversation non trouvée ou non autorisée'}), 403
-            if conv.title == "Nouvelle conversation":
-                conv.title = title
-        else:
-            # Pas de conversation_id : créer une nouvelle conversation
-            conv = Conversation(user_id=current_user_id, title=title)
-            db.session.add(conv)
-            db.session.flush()
-
-        # Historique lu depuis la base, dans l'ordre d'insertion
-        previous_messages = Message.query.filter_by(conversation_id=conv.id).order_by(Message.id.asc()).all()
-        history = [
-            {"role": "assistant" if m.is_bot else "user", "content": m.content}
-            for m in previous_messages
-        ]
-        history.append({"role": "user", "content": message})
-
-        try:
-            reply = generate_bot_reply(history)
-        except Exception as api_error:
-            print("=" * 50)
-            print(f"ERREUR LORS DE LA GÉNÉRATION GROQ ({GROQ_MODEL}):")
-            traceback.print_exc()
-            print("=" * 50)
-            # Rien n'est enregistré : l'utilisateur peut simplement renvoyer son message
-            db.session.rollback()
-            return jsonify({
-                'success': False,
-                'error': describe_api_error(api_error)
-            }), 502
-
-        # Enregistrer l'échange uniquement si la génération a réussi
-        db.session.add(Message(conversation_id=conv.id, content=message, is_bot=False))
-        db.session.add(Message(conversation_id=conv.id, content=reply, is_bot=True))
-        conv.preview = make_preview(reply)
-        db.session.commit()
-
-
+    if not message:
+        return jsonify({'success': False, 'error': 'Message requis'}), 400
+    if len(message) > MAX_MESSAGE_CHARS:
         return jsonify({
-            'success': True,
-            'message': reply,
-            'conversationId': conv.id
-        })
+            'success': False,
+            'error': f"Message trop long : {MAX_MESSAGE_CHARS} caractères maximum"
+        }), 400
 
-    except Exception as e:
+    title = message[:50] + "..." if len(message) > 50 else message
+
+    if conversation_id:
+        # Vérifier l'appartenance
+        conv = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
+        if not conv:
+            return jsonify({'success': False, 'error': 'Conversation non trouvée ou non autorisée'}), 403
+        if conv.title == "Nouvelle conversation":
+            conv.title = title
+    else:
+        # Pas de conversation_id : créer une nouvelle conversation
+        conv = Conversation(user_id=current_user_id, title=title)
+        db.session.add(conv)
+        db.session.flush()
+
+    # Historique lu depuis la base, dans l'ordre d'insertion
+    previous_messages = Message.query.filter_by(conversation_id=conv.id).order_by(Message.id.asc()).all()
+    history = [
+        {"role": "assistant" if m.is_bot else "user", "content": m.content}
+        for m in previous_messages
+    ]
+    history.append({"role": "user", "content": message})
+
+    try:
+        reply = generate_bot_reply(history)
+    except Exception as api_error:
+        app.logger.exception("Échec de la génération Groq (%s)", GROQ_MODEL)
+        # Rien n'est enregistré : l'utilisateur peut simplement renvoyer son message
         db.session.rollback()
         return jsonify({
             'success': False,
-            'error': str(e)
-        }), 500
+            'error': describe_api_error(api_error)
+        }), 502
 
-# Route pour réinitialiser une session d'idéation (On ne supprime plus via ce bouton, mais via le DELETE en frontend)
-@app.route('/api/chat/reset', methods=['POST'])
-@jwt_required()
-def reset_chat():
-    try:
-        # Simplification: l'utilisateur front demandera une nouvelle conversation,
-        # donc on a juste besoin de ne rien faire ici sauf valider
-        return jsonify({
-            'success': True,
-            'message': 'Veuillez utiliser start_chat ou envoyer un message sans ID pour démarrer une nouvelle conversation.'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
+    # Enregistrer l'échange uniquement si la génération a réussi
+    db.session.add(Message(conversation_id=conv.id, content=message, is_bot=False))
+    db.session.add(Message(conversation_id=conv.id, content=reply, is_bot=True))
+    conv.preview = make_preview(reply)
+    db.session.commit()
 
-        }), 500
+    return jsonify({
+        'success': True,
+        'message': reply,
+        'conversationId': conv.id
+    })
 
 # Limites de la mindmap pour qu'elle reste lisible
 MINDMAP_MAX_BRANCHES = 6
@@ -708,154 +618,38 @@ def normalize_mindmap_markdown(raw):
 
 
 @app.route('/api/mindmap/generate', methods=['POST'])
+@limiter.limit(LLM_LIMIT)
 @jwt_required()
 def generate_mindmap():
+    data = request.get_json(silent=True) or {}
+    content = (data.get('content') or '').strip()
+    if not content:
+        return jsonify({'success': False, 'error': 'Aucun contenu pour la mindmap'}), 400
+
+    params = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": MINDMAP_PROMPT},
+            {"role": "user", "content": content[:MAX_HISTORY_CHARS]}
+        ],
+        "temperature": 0.3,
+        "max_completion_tokens": 2048,
+    }
+    if GROQ_MODEL.startswith('openai/gpt-oss'):
+        params["reasoning_effort"] = "low"
+
     try:
-        data = request.get_json(silent=True) or {}
-        content = (data.get('content') or '').strip()
-        if not content:
-            return jsonify({'success': False, 'error': 'Aucun contenu pour la mindmap'}), 400
+        response = client.chat.completions.create(**params)
+        raw = (response.choices[0].message.content or "") if response and response.choices else ""
+    except Exception as api_error:
+        app.logger.exception("Échec de la génération de la mindmap (%s)", GROQ_MODEL)
+        return jsonify({'success': False, 'error': describe_api_error(api_error)}), 502
 
-        params = {
-            "model": GROQ_MODEL,
-            "messages": [
-                {"role": "system", "content": MINDMAP_PROMPT},
-                {"role": "user", "content": content[:MAX_HISTORY_CHARS]}
-            ],
-            "temperature": 0.3,
-            "max_completion_tokens": 2048,
-        }
-        if GROQ_MODEL.startswith('openai/gpt-oss'):
-            params["reasoning_effort"] = "low"
+    markdown_map = normalize_mindmap_markdown(raw)
+    if not markdown_map:
+        return jsonify({'success': False, 'error': 'Mindmap vide générée'}), 502
 
-        try:
-            response = client.chat.completions.create(**params)
-            raw = (response.choices[0].message.content or "") if response and response.choices else ""
-        except Exception as api_error:
-            traceback.print_exc()
-            return jsonify({'success': False, 'error': describe_api_error(api_error)}), 502
-
-        markdown_map = normalize_mindmap_markdown(raw)
-        if not markdown_map:
-            return jsonify({'success': False, 'error': 'Mindmap vide générée'}), 502
-
-        return jsonify({'success': True, 'markdown': markdown_map})
-
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Ajouter les nouvelles routes pour l'export et l'envoi par email
-@app.route('/api/mindmap/export', methods=['POST'])
-@jwt_required()
-def export_mindmap():
-    try:
-        current_user_id = int(get_jwt_identity())
-        data = request.json
-        format = data.get('format', 'markdown')
-        content = data.get('content')
-        
-        if not content:
-            return jsonify({'error': 'Aucun contenu à exporter'}), 400
-            
-        # Pour le format markdown, on renvoie directement le contenu
-        if format == 'markdown':
-            return jsonify({
-                'success': True,
-                'content': content,
-                'format': format
-            })
-            
-        # Pour le format HTML, on convertit le markdown en HTML
-        elif format == 'html':
-            html_content = markdown.markdown(content)
-            styled_html = f"""
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-                    h1 {{ color: #2c3e50; }}
-                    .section {{ margin: 20px 0; padding: 10px; border-left: 4px solid #3498db; }}
-                    .emoji {{ font-size: 1.5em; }}
-                </style>
-            </head>
-            <body>
-                {html_content}
-            </body>
-            </html>
-            """
-            return jsonify({
-                'success': True,
-                'content': styled_html,
-                'format': 'html'
-            })
-            
-        if format == 'png':
-            return send_file(
-                content,
-                mimetype='image/png',
-                as_attachment=True,
-                download_name='mindmap.png'
-            )
-            
-        return jsonify({
-            'success': True,
-            'content': content,
-            'format': format
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/mindmap/send-email', methods=['POST'])
-@jwt_required()
-def send_mindmap_email():
-    """Envoie par email soit le contenu fourni (ex. la mindmap),
-    soit la dernière réponse du bot d'une conversation de l'utilisateur"""
-    try:
-        current_user_id = int(get_jwt_identity())
-        data = request.get_json(silent=True) or {}
-        to_email = (data.get('email') or '').strip()
-        format = data.get('format', 'html')
-        content = (data.get('content') or '').strip()
-        conversation_id = data.get('conversationId')
-
-        if not to_email or not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', to_email):
-            return jsonify({'success': False, 'error': 'Adresse email valide requise'}), 400
-
-        if not content:
-            if not conversation_id:
-                return jsonify({'success': False, 'error': 'Fournir "content" ou "conversationId"'}), 400
-            conversation = Conversation.query.filter_by(id=conversation_id, user_id=current_user_id).first()
-            if not conversation:
-                return jsonify({'success': False, 'error': 'Conversation non trouvée'}), 404
-            last_bot_message = (Message.query
-                                .filter_by(conversation_id=conversation.id, is_bot=True)
-                                .order_by(Message.id.desc())
-                                .first())
-            if not last_bot_message:
-                return jsonify({'success': False, 'error': 'Aucune réponse à envoyer dans cette conversation'}), 404
-            content = last_bot_message.content
-
-        send_email_smtp(to_email, "Votre Mindmap d'Idéation - IdeazBot", content, format)
-
-        return jsonify({
-            'success': True,
-            'message': 'Email envoyé avec succès'
-        })
-
-    except EmailConfigError as e:
-        return jsonify({'success': False, 'error': str(e)}), 503
-    except smtplib.SMTPAuthenticationError:
-        return jsonify({'success': False, 'error': 'Identifiants SMTP refusés : vérifiez EMAIL_USER et EMAIL_PASSWORD'}), 502
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    return jsonify({'success': True, 'markdown': markdown_map})
 
 # Lancement local uniquement (en ligne : gunicorn app:app)
 if __name__ == '__main__':

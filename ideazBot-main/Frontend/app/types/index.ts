@@ -5,19 +5,12 @@ export interface UserData {
   email: string;
 }
 
-export interface FileData {
-  name: string;
-  type: string;
-  size: number;
-}
-
 export interface Message {
   id: number;
   content: string;
   isBot: boolean;
   timestamp: string;
   createdAt?: string; // date ISO 8601 (UTC) renvoyée par le backend
-  files?: FileData[] | null;
   isError?: boolean;
 }
 
@@ -28,11 +21,6 @@ export interface Conversation {
   messages: Message[];
   timestamp: string;
   createdAt?: string; // date ISO 8601 (UTC) renvoyée par le backend
-}
-
-export interface FileUploadProps {
-  onFileUpload: (files: FileData[]) => void;
-  disabled: boolean;
 }
 
 export interface FloatingHistoryPanelProps {
@@ -47,32 +35,5 @@ export interface FloatingHistoryPanelProps {
 export interface ChatMessageProps {
   message: Message;
   isBot: boolean;
-  onDownload?: (file: FileData) => void;
   onGenerateMindmap?: (message: Message) => void;
-}
-
-export interface ErrorAlertProps {
-  error: Error;
-  onClose: () => void;
-}
-
-export interface Etapes {
-  reformulation: string;
-  contexte: string;
-  idees: string[];
-  selection: string[];
-  concept: string;
-  test: string;
-  mindmap?: string;
-}
-
-export interface ApiResponse {
-  success: boolean;
-  data?: {
-    etapes: Etapes;
-  };
-  message?: string;
-  error?: string;
-  details?: any;
-  timestamp?: string;
 }

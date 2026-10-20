@@ -18,12 +18,18 @@ import {
   X,
   Search,
   Trash2,
-  FileText,
-  Paperclip,
   LogOut
 } from "lucide-react";
-import { UserData, Message, FileData, Conversation, FileUploadProps, FloatingHistoryPanelProps, ChatMessageProps } from '../types';
-import { authApi, API_URL } from '../services/api';
+import { UserData, Message, Conversation, FloatingHistoryPanelProps, ChatMessageProps } from '../types';
+import { API_URL, MAX_MESSAGE_LENGTH, redirectToLogin, isAuthError } from '../services/api';
+
+// Positions fixes (pas de Math.random) : le rendu serveur et le rendu navigateur sont identiques
+const PARTICLES = [...Array(8)].map((_, i) => ({
+  left: (i * 47 + 13) % 90 + 5,
+  top: (i * 37 + 23) % 90 + 5,
+  delay: (i * 0.7) % 3,
+  duration: 3 + (i % 3) * 0.7
+}));
 
 // Composant d'arrière-plan animé
 const AnimatedBackground = () => {
@@ -47,15 +53,15 @@ const AnimatedBackground = () => {
       </div>
 
       {/* Particules flottantes */}
-      {[...Array(8)].map((_, i) => (
+      {PARTICLES.map((particle, i) => (
         <div
           key={i}
           className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 opacity-20 animate-float"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${3 + Math.random() * 2}s`
+            left: `${particle.left}%`,
+            top: `${particle.top}%`,
+            animationDelay: `${particle.delay}s`,
+            animationDuration: `${particle.duration}s`
           }}
         />
       ))}
@@ -79,12 +85,13 @@ const useAuth = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        redirectToLogin();
+        return;
+      }
+
       try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          throw new Error("No token found");
-        }
-        
         const toUserData = (data: any): UserData => ({
           nom: data?.nom || data?.email?.split('@')[0] || "Utilisateur",
           prenom: data?.prenom || "",
@@ -101,6 +108,10 @@ const useAuth = () => {
           const res = await fetch(`${API_URL}/api/user/profile`, {
             headers: { Authorization: `Bearer ${token}` }
           });
+          if (isAuthError(res.status)) {
+            redirectToLogin();
+            return;
+          }
           const data = await res.json();
           if (res.ok && data.success && data.user) {
             setUser(toUserData(data.user));
@@ -121,63 +132,6 @@ const useAuth = () => {
   }, []);
 
   return { user, loading };
-};
-
-// FileUpload component
-const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, disabled }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleFileSelect = (files: FileList | null) => {
-    if (files) {
-      const fileArray = Array.from(files).map(file => ({
-        name: file.name,
-        type: file.type,
-        size: file.size
-      }));
-      onFileUpload(fileArray);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileSelect(e.dataTransfer.files);
-  };
-
-  return (
-    <div className="relative">
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-        onChange={(e) => handleFileSelect(e.target.files)}
-        className="hidden"
-      />
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={disabled}
-        className="p-2 text-purple-600 transition-colors hover:bg-purple-50 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Joindre un fichier"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <Paperclip className={`w-5 h-5 ${isDragging ? 'animate-bounce' : ''}`} />
-      </button>
-    </div>
-  );
 };
 
 // FloatingHistoryPanel component
@@ -303,13 +257,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
   );
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onDownload, onGenerateMindmap }) => {
-  const handleDownload = (file: FileData) => {
-    if (onDownload) {
-      onDownload(file);
-    }
-  };
-
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMindmap }) => {
   return (
     <div className={`flex ${isBot ? 'justify-start' : 'justify-end'} mb-4 sm:mb-6`}>
       <div className={`flex items-start gap-2 sm:gap-3 min-w-0 max-w-full sm:max-w-[85%] lg:max-w-[80%] ${!isBot ? 'flex-row-reverse' : ''}`}>
@@ -424,7 +372,6 @@ const IdeazBotInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<FileData[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
@@ -477,37 +424,26 @@ const IdeazBotInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Gestion des fichiers uploadés
-  const handleFileUpload = (files: FileData[]) => {
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
   const handleSendMessage = async () => {
-    if (!inputText.trim() && uploadedFiles.length === 0) return;
+    const messageCopy = inputText.trim();
+    if (!messageCopy || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now(),
-      content: inputText || "Fichier(s) partagé(s)",
+      content: messageCopy,
       isBot: false,
-      timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      files: uploadedFiles.length > 0 ? uploadedFiles : null
+      timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const messageCopy = inputText;
-    const filesCopy = [...uploadedFiles];
     setInputText('');
-    setUploadedFiles([]);
     setIsLoading(true);
 
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
-        throw new Error('Non authentifié');
+        redirectToLogin();
+        return;
       }
 
       const response = await fetch(`${API_URL}/api/chat`, {
@@ -518,6 +454,11 @@ const IdeazBotInterface = () => {
         },
         body: JSON.stringify({ message: messageCopy, conversationId: currentConversationId }),
       });
+
+      if (isAuthError(response.status)) {
+        redirectToLogin();
+        return;
+      }
 
       const data = await response.json();
 
@@ -547,21 +488,10 @@ const IdeazBotInterface = () => {
 
     } catch (error) {
       console.error('Erreur:', error);
-      let errorMsg = 'Une erreur inattendue est survenue.';
-
-      if (error instanceof Error) {
-        if (error.message.includes('429')) {
-          errorMsg = 'Trop de requêtes. Veuillez patienter quelques instants avant de réessayer.';
-        } else if (error.message.includes('Invalid response format')) {
-          errorMsg = 'Format de réponse invalide. L\'équipe technique a été notifiée.';
-        } else if (error.message.includes('Quota exceeded')) {
-          errorMsg = 'Quota d\'utilisation dépassé. Veuillez réessayer plus tard.';
-        } else if (error.message.includes('API key')) {
-          errorMsg = 'Erreur de configuration. L\'équipe technique a été notifiée.';
-        } else {
-          errorMsg = `${error.message}. Veuillez réessayer dans quelques instants.`;
-        }
-      }
+      // Les messages d'erreur du backend sont déjà rédigés pour l'utilisateur
+      const errorMsg = error instanceof Error
+        ? `${error.message}. Veuillez réessayer dans quelques instants.`
+        : 'Une erreur inattendue est survenue.';
 
       const errorMessage: Message = {
         id: Date.now() + 1,
@@ -587,14 +517,7 @@ const IdeazBotInterface = () => {
     setMessages([]);
     setCurrentConversation(null);
     setCurrentConversationId(null);
-    setUploadedFiles([]);
     setInputText('');
-  };
-
-  const handleLogout = () => {
-    authApi.logout();
-    // replace : le bouton « retour » ne ramène pas sur le chat après déconnexion
-    window.location.replace('/Connexion');
   };
 
   // Ouvre la mindmap construite à partir d'une réponse précise du bot
@@ -611,7 +534,6 @@ const IdeazBotInterface = () => {
     setCurrentConversation(conv);
     setCurrentConversationId(conv.id);
     setMessages([]);
-    setUploadedFiles([]);
     setIsLoading(true);
 
     try {
@@ -712,10 +634,6 @@ const IdeazBotInterface = () => {
 
             {/* Right side - Actions */}
             <div className="flex items-center flex-shrink-0 gap-0.5 sm:gap-2">
-              <div className="items-center hidden px-3 py-1 space-x-2 border border-green-200 rounded-full lg:flex bg-gradient-to-r from-green-50 to-emerald-50">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-green-600">IA Active</span>
-              </div>
               {messages.length > 0 && (
                 <button
                   onClick={downloadConversation}
@@ -738,7 +656,7 @@ const IdeazBotInterface = () => {
               </button>
               <div className="hidden w-px h-6 mx-1 bg-purple-200 sm:block"></div>
               <button
-                onClick={handleLogout}
+                onClick={redirectToLogin}
                 className="p-2 text-purple-600 transition-colors hover:bg-red-50 hover:text-red-600 rounded-xl"
                 title="Se déconnecter"
                 aria-label="Se déconnecter"
@@ -820,26 +738,6 @@ const IdeazBotInterface = () => {
           {/* Input area avec design IdeazBot (marge du bas : barre d'accueil des iPhone) */}
           <div className="px-3 pt-3 sm:px-6 sm:pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-purple-200/30 bg-white/50 backdrop-blur-sm">
               <>
-                {/* Fichiers uploadés */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-wrap gap-2">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center p-2 space-x-2 text-sm border rounded-lg bg-gradient-to-r from-purple-100 to-blue-100 border-purple-200/50">
-                          <FileText className="w-4 h-4 text-purple-600" />
-                          <span className="font-medium text-purple-700 truncate max-w-32">{file.name}</span>
-                          <button
-                            onClick={() => removeFile(index)}
-                            className="text-purple-400 transition-colors hover:text-red-500"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex items-end gap-2 sm:gap-3">
                   <div className="relative flex-1 min-w-0">
                     {/* text-base (16px) : évite le zoom automatique d'iOS sur les champs de saisie */}
@@ -847,24 +745,21 @@ const IdeazBotInterface = () => {
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyPress={handleKeyPress}
+                      maxLength={MAX_MESSAGE_LENGTH}
                       placeholder="Décrivez votre idée, votre projet ou posez votre question..."
                       className="w-full p-3 pb-6 text-base text-gray-900 placeholder-gray-500 transition-all duration-200 border-2 outline-none resize-none sm:p-4 sm:pb-6 sm:min-h-[6.5rem] border-purple-200/50 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-white/80 backdrop-blur-sm"
                       rows={2}
                     />
-                    <div className="absolute text-xs text-purple-400 pointer-events-none bottom-3 right-3">
-                      {inputText.length}/1000
+                    <div className={`absolute text-xs pointer-events-none bottom-3 right-3 ${inputText.length >= MAX_MESSAGE_LENGTH ? 'text-red-500' : 'text-purple-400'}`}>
+                      {inputText.length}/{MAX_MESSAGE_LENGTH}
                     </div>
                   </div>
 
                   {/* Actions toolbar */}
                   <div className="flex items-center gap-1 pb-2 sm:gap-2">
-                    <FileUpload
-                      onFileUpload={handleFileUpload}
-                      disabled={isLoading}
-                    />
                     <button
                       onClick={handleSendMessage}
-                      disabled={(!inputText.trim() && uploadedFiles.length === 0) || isLoading}
+                      disabled={!inputText.trim() || isLoading}
                       aria-label="Envoyer"
                       className="p-3 text-white transition-all duration-200 transform shadow-lg sm:p-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 rounded-2xl disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 disabled:transform-none"
                     >

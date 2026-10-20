@@ -308,7 +308,7 @@ export default function HomePage() {
               Prêt à transformer vos idées en réalité ?
             </p>
             <Link 
-              href="/dashboard"
+              href="/Chatbot"
               className="group inline-flex w-full items-center justify-center bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
             >
               <Play className="mr-2 h-5 w-5 group-hover:animate-pulse" />
