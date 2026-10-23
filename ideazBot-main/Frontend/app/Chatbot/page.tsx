@@ -36,27 +36,27 @@ const AnimatedBackground = () => {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
       {/* Lumières flottantes */}
-      <div className="absolute w-32 h-32 rounded-full top-20 left-10 bg-purple-300/20 blur-xl animate-pulse"></div>
-      <div className="absolute w-24 h-24 rounded-full top-40 right-20 bg-blue-300/20 blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-      <div className="absolute w-40 h-40 rounded-full bottom-32 left-1/4 bg-indigo-300/15 blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      <div className="absolute w-20 h-20 rounded-full top-1/3 right-1/3 bg-purple-400/25 blur-lg animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+      <div className="absolute w-32 h-32 rounded-full top-20 left-10 bg-emerald-300/20 blur-xl animate-pulse"></div>
+      <div className="absolute w-24 h-24 rounded-full top-40 right-20 bg-lime-300/20 blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      <div className="absolute w-40 h-40 rounded-full bottom-32 left-1/4 bg-yellow-300/15 blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute w-20 h-20 rounded-full top-1/3 right-1/3 bg-emerald-400/25 blur-lg animate-pulse" style={{ animationDelay: '0.5s' }}></div>
 
       {/* Cerveaux flottants */}
       <div className="absolute top-1/4 left-1/2 opacity-5 animate-float">
-        <Brain className="w-16 h-16 text-purple-600 transform rotate-12" />
+        <Brain className="w-16 h-16 text-emerald-600 transform rotate-12" />
       </div>
       <div className="absolute bottom-1/4 right-1/4 opacity-5 animate-float" style={{ animationDelay: '1.5s' }}>
-        <Brain className="w-12 h-12 text-blue-600 transform -rotate-12" />
+        <Brain className="w-12 h-12 text-lime-600 transform -rotate-12" />
       </div>
       <div className="absolute top-1/2 left-1/4 opacity-5 animate-float" style={{ animationDelay: '0.8s' }}>
-        <Lightbulb className="text-indigo-600 transform rotate-45 w-14 h-14" />
+        <Lightbulb className="text-lime-600 transform rotate-45 w-14 h-14" />
       </div>
 
       {/* Particules flottantes */}
       {PARTICLES.map((particle, i) => (
         <div
           key={i}
-          className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-blue-400 opacity-20 animate-float"
+          className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-emerald-400 to-lime-400 opacity-20 animate-float"
           style={{
             left: `${particle.left}%`,
             top: `${particle.top}%`,
@@ -161,18 +161,18 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
       <div className="fixed inset-0 z-40 bg-black/30 sm:hidden" onClick={onClose} aria-hidden="true" />
     )}
     {/* Plein écran sur mobile, panneau flottant à droite à partir de sm */}
-    <div className={`fixed inset-y-0 right-0 w-full sm:inset-y-4 sm:right-4 sm:w-80 flex flex-col bg-white/95 backdrop-blur-xl sm:rounded-3xl shadow-2xl border border-purple-200/30 transform transition-all duration-500 z-50 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
+    <div className={`fixed inset-y-0 right-0 w-full sm:inset-y-4 sm:right-4 sm:w-80 flex flex-col bg-white/95 backdrop-blur-xl sm:rounded-3xl shadow-2xl border border-emerald-200/30 transform transition-all duration-500 z-50 ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
       }`}>
 
       {/* Header avec couleurs IdeazBot */}
-      <div className="flex items-center justify-between p-4 border-b sm:p-6 border-purple-100/50">
+      <div className="flex items-center justify-between p-4 border-b sm:p-6 border-emerald-100/50">
         <div className="flex items-center space-x-3">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse"></div>
+          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 animate-pulse"></div>
           <h3 className="font-semibold text-gray-800">Historique</h3>
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-gray-400 transition-colors rounded-lg hover:text-purple-600 hover:bg-purple-50"
+          className="p-2 text-gray-400 transition-colors rounded-lg hover:text-emerald-600 hover:bg-emerald-50"
           aria-label="Fermer l'historique"
         >
           <X className="w-5 h-5" />
@@ -180,15 +180,15 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
       </div>
 
       {/* Search bar */}
-      <div className="p-4 border-b border-purple-100/50">
+      <div className="p-4 border-b border-emerald-100/50">
         <div className="relative">
-          <Search className="absolute w-4 h-4 text-purple-400 transform -translate-y-1/2 left-3 top-1/2" />
+          <Search className="absolute w-4 h-4 text-emerald-400 transform -translate-y-1/2 left-3 top-1/2" />
           <input
             type="text"
             placeholder="Rechercher une conversation..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full py-2 pl-10 pr-4 text-sm border-0 outline-none bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl focus:ring-2 focus:ring-purple-500/20"
+            className="w-full py-2 pl-10 pr-4 text-sm border-0 outline-none bg-gradient-to-r from-emerald-50 to-lime-50 rounded-xl focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
       </div>
@@ -200,7 +200,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
             onNewConversation();
             onClose();
           }}
-          className="flex items-center justify-center w-full p-3 space-x-2 text-sm font-medium text-white transition-all duration-200 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-xl hover:shadow-xl"
+          className="flex items-center justify-center w-full p-3 space-x-2 text-sm font-medium text-white transition-all duration-200 shadow-lg bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-700 hover:to-lime-700 rounded-xl hover:shadow-xl"
         >
           <Plus className="w-4 h-4" />
           <span>Nouvelle conversation</span>
@@ -223,7 +223,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
                   onSelectConversation(conv);
                   onClose();
                 }}
-                className="p-3 transition-all duration-200 border border-transparent cursor-pointer group rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:border-purple-200/30"
+                className="p-3 transition-all duration-200 border border-transparent cursor-pointer group rounded-xl hover:bg-gradient-to-r hover:from-emerald-50 hover:to-lime-50 hover:border-emerald-200/30"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -233,7 +233,7 @@ const FloatingHistoryPanel: React.FC<FloatingHistoryPanelProps> = ({
                     <p className="mt-1 text-xs text-gray-500 truncate">
                       {conv.preview}
                     </p>
-                    <p className="mt-1 text-xs text-purple-400">{conv.timestamp}</p>
+                    <p className="mt-1 text-xs text-emerald-400">{conv.timestamp}</p>
                   </div>
                   <button
                     onClick={(e) => {
@@ -263,7 +263,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
       <div className={`flex items-start gap-2 sm:gap-3 min-w-0 max-w-full sm:max-w-[85%] lg:max-w-[80%] ${!isBot ? 'flex-row-reverse' : ''}`}>
         {/* Avatar */}
         <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ${isBot
-          ? 'bg-gradient-to-r from-purple-600 to-blue-600'
+          ? 'bg-gradient-to-r from-emerald-600 to-lime-600'
           : 'bg-gradient-to-r from-gray-600 to-gray-700'
           }`}>
           {isBot ? (
@@ -275,7 +275,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
 
         {/* Message content : les mots très longs (liens…) passent à la ligne au lieu de déborder */}
         <div className={`p-3 sm:p-4 rounded-2xl shadow-sm border max-w-full min-w-0 [overflow-wrap:anywhere] ${isBot
-          ? 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-100/50'
+          ? 'bg-gradient-to-br from-emerald-50 to-lime-50 border-emerald-100/50'
           : 'bg-gradient-to-br from-gray-100 to-gray-50 border-gray-200/50'
           }`}>
           <div className="mb-2 text-sm font-medium text-gray-600">
@@ -283,39 +283,39 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
           </div>
 
           {/* Contenu avec support Markdown */}
-          <div className={`prose prose-sm max-w-none ${isBot ? 'prose-purple' : 'prose-gray'
+          <div className={`prose prose-sm max-w-none ${isBot ? 'prose-emerald' : 'prose-gray'
             }`}>
             {isBot ? (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   // Personnalisation des composants Markdown
-                  h1: ({ children }) => <h1 className="pb-2 mb-3 text-xl font-bold text-purple-800 border-b border-purple-200">{children}</h1>,
-                  h2: ({ children }) => <h2 className="mt-4 mb-2 text-lg font-bold text-purple-700">{children}</h2>,
-                  h3: ({ children }) => <h3 className="mt-3 mb-2 text-base font-bold text-purple-600">{children}</h3>,
-                  h4: ({ children }) => <h4 className="mt-3 mb-2 text-sm font-bold text-purple-600">{children}</h4>,
-                  h5: ({ children }) => <h5 className="mt-2 mb-2 text-sm font-bold text-purple-600">{children}</h5>,
-                  h6: ({ children }) => <h6 className="mt-2 mb-2 text-xs font-bold text-purple-600">{children}</h6>,
+                  h1: ({ children }) => <h1 className="pb-2 mb-3 text-xl font-bold text-emerald-800 border-b border-emerald-200">{children}</h1>,
+                  h2: ({ children }) => <h2 className="mt-4 mb-2 text-lg font-bold text-emerald-700">{children}</h2>,
+                  h3: ({ children }) => <h3 className="mt-3 mb-2 text-base font-bold text-emerald-600">{children}</h3>,
+                  h4: ({ children }) => <h4 className="mt-3 mb-2 text-sm font-bold text-emerald-600">{children}</h4>,
+                  h5: ({ children }) => <h5 className="mt-2 mb-2 text-sm font-bold text-emerald-600">{children}</h5>,
+                  h6: ({ children }) => <h6 className="mt-2 mb-2 text-xs font-bold text-emerald-600">{children}</h6>,
                   p: ({ children }) => <p className="mb-2 leading-relaxed text-gray-700">{children}</p>,
-                  ul: ({ children }) => <ul className="mb-3 ml-5 space-y-1 list-disc marker:text-purple-500">{children}</ul>,
-                  ol: ({ children }) => <ol className="mb-3 ml-5 space-y-2 list-decimal marker:font-bold marker:text-purple-600">{children}</ol>,
+                  ul: ({ children }) => <ul className="mb-3 ml-5 space-y-1 list-disc marker:text-emerald-500">{children}</ul>,
+                  ol: ({ children }) => <ol className="mb-3 ml-5 space-y-2 list-decimal marker:font-bold marker:text-emerald-600">{children}</ol>,
                   li: ({ children }) => <li className="pl-1 text-gray-700">{children}</li>,
-                  strong: ({ children }) => <strong className="font-bold text-purple-800">{children}</strong>,
-                  em: ({ children }) => <em className="italic text-purple-600">{children}</em>,
-                  hr: () => <hr className="my-4 border-purple-200" />,
+                  strong: ({ children }) => <strong className="font-bold text-emerald-800">{children}</strong>,
+                  em: ({ children }) => <em className="italic text-emerald-600">{children}</em>,
+                  hr: () => <hr className="my-4 border-emerald-200" />,
                   // Tableaux (syntaxe Markdown GFM) : défilement horizontal si trop larges
                   table: ({ children }) => (
-                    <div className="my-4 overflow-x-auto bg-white border border-purple-200 shadow-sm rounded-xl">
+                    <div className="my-4 overflow-x-auto bg-white border border-emerald-200 shadow-sm rounded-xl">
                       <table className="min-w-full text-sm border-collapse [overflow-wrap:normal]">{children}</table>
                     </div>
                   ),
                   thead: ({ children }) => (
-                    <thead className="bg-gradient-to-r from-purple-600 to-blue-600">{children}</thead>
+                    <thead className="bg-gradient-to-r from-emerald-600 to-lime-600">{children}</thead>
                   ),
                   tbody: ({ children }) => (
-                    <tbody className="divide-y divide-purple-100 [&>tr:nth-child(even)]:bg-purple-50/60">{children}</tbody>
+                    <tbody className="divide-y divide-emerald-100 [&>tr:nth-child(even)]:bg-emerald-50/60">{children}</tbody>
                   ),
-                  tr: ({ children }) => <tr className="transition-colors hover:bg-purple-100/50">{children}</tr>,
+                  tr: ({ children }) => <tr className="transition-colors hover:bg-emerald-100/50">{children}</tr>,
                   th: ({ children }) => (
                     <th className="px-3 py-2 sm:px-4 sm:py-3 text-xs font-semibold tracking-wide text-left text-white uppercase whitespace-nowrap">
                       {children}
@@ -325,7 +325,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
                     <td className="px-3 py-2 sm:px-4 sm:py-3 min-w-[8rem] leading-relaxed text-gray-700 align-top">{children}</td>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="py-2 pl-4 mb-3 border-l-4 border-purple-300 rounded-r-lg bg-purple-50/50">
+                    <blockquote className="py-2 pl-4 mb-3 border-l-4 border-emerald-300 rounded-r-lg bg-emerald-50/50">
                       {children}
                     </blockquote>
                   ),
@@ -334,7 +334,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
                     <pre className="p-3 mb-3 overflow-x-auto bg-gray-100 rounded-lg">{children}</pre>
                   ),
                   code: ({ children }) => (
-                    <code className="bg-purple-100 text-purple-800 px-1 py-0.5 rounded text-xs font-mono">
+                    <code className="bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded text-xs font-mono">
                       {children}
                     </code>
                   ),
@@ -349,10 +349,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isBot, onGenerateMin
 
           {/* Option discrète sous la réponse du bot */}
           {isBot && !message.isError && onGenerateMindmap && (
-            <div className="flex justify-end pt-2 mt-3 border-t border-purple-100/70">
+            <div className="flex justify-end pt-2 mt-3 border-t border-emerald-100/70">
               <button
                 onClick={() => onGenerateMindmap(message)}
-                className="flex items-center px-2 py-1 space-x-1 text-xs font-medium text-purple-600 transition-colors rounded-lg hover:bg-purple-100 hover:text-purple-800"
+                className="flex items-center px-2 py-1 space-x-1 text-xs font-medium text-emerald-600 transition-colors rounded-lg hover:bg-emerald-100 hover:text-emerald-800"
                 title="Visualiser cette réponse sous forme de mindmap"
               >
                 <Brain className="w-3.5 h-3.5" />
@@ -589,9 +589,9 @@ const IdeazBotInterface = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+      <div className="flex items-center justify-center h-dvh bg-gradient-to-br from-emerald-50 via-lime-50 to-yellow-50">
         <div className="text-center">
-          <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 animate-pulse">
+          <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-r from-emerald-600 to-lime-600 animate-pulse">
             <Brain className="w-8 h-8 text-white" />
           </div>
           <p className="text-gray-600">Connexion en cours...</p>
@@ -602,33 +602,33 @@ const IdeazBotInterface = () => {
 
   return (
     // h-dvh : hauteur réellement visible (sur mobile, h-screen passe sous la barre d'adresse)
-    <div className="relative flex flex-col overflow-hidden h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="relative flex flex-col overflow-hidden h-dvh bg-gradient-to-br from-emerald-50 via-lime-50 to-yellow-50">
       {/* Arrière-plan animé */}
       <AnimatedBackground />
 
       {/* Header avec branding IdeazBot */}
-      <header className="sticky top-0 z-10 border-b shadow-sm border-purple-200/30 bg-white/80 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-10 border-b shadow-sm border-emerald-200/30 bg-white/80 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
         <div className="max-w-6xl px-3 py-2 mx-auto sm:px-6 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             {/* Left side - Logo et branding (sur mobile : logo + salutation seulement) */}
             <div className="flex items-center min-w-0 gap-2 sm:gap-4">
               <div className="flex items-center flex-shrink-0 space-x-3">
-                <div className="flex items-center justify-center shadow-lg w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
+                <div className="flex items-center justify-center shadow-lg w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-emerald-600 to-lime-600 rounded-xl">
                   <Brain className="w-5 h-5 text-white sm:w-6 sm:h-6" />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
+                  <h1 className="text-xl font-bold text-transparent bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text">
                     IdeazBot
                   </h1>
-                  <p className="text-xs font-medium text-purple-500">Intelligence Créative</p>
+                  <p className="text-xs font-medium text-emerald-500">Intelligence Créative</p>
                 </div>
               </div>
-              <div className="flex-shrink-0 hidden w-px h-8 bg-purple-200 sm:block"></div>
+              <div className="flex-shrink-0 hidden w-px h-8 bg-emerald-200 sm:block"></div>
               <div className="min-w-0">
                 <h2 className="text-base font-semibold text-gray-800 truncate sm:text-lg">
                   {getGreeting()}, {user?.prenom || user?.nom}
                 </h2>
-                <p className="hidden text-sm text-purple-600 truncate md:block">Prêt à générer des idées innovantes ?</p>
+                <p className="hidden text-sm text-emerald-600 truncate md:block">Prêt à générer des idées innovantes ?</p>
               </div>
             </div>
 
@@ -637,7 +637,7 @@ const IdeazBotInterface = () => {
               {messages.length > 0 && (
                 <button
                   onClick={downloadConversation}
-                  className="p-2 text-purple-600 transition-colors hover:bg-purple-50 rounded-xl"
+                  className="p-2 text-emerald-600 transition-colors hover:bg-emerald-50 rounded-xl"
                   title="Télécharger la conversation"
                 >
                   <Download className="w-5 h-5" />
@@ -645,19 +645,19 @@ const IdeazBotInterface = () => {
               )}
               <button
                 onClick={() => setHistoryOpen(true)}
-                className="relative p-2 text-purple-600 transition-colors hover:bg-purple-50 rounded-xl"
+                className="relative p-2 text-emerald-600 transition-colors hover:bg-emerald-50 rounded-xl"
                 title="Historique des conversations"
               >
                 <History className="w-5 h-5" />
                 {/* Pastille qui s'élargit si le nombre a plusieurs chiffres */}
-                <div className="absolute flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full -top-1 -right-1 bg-gradient-to-r from-purple-500 to-blue-500">
+                <div className="absolute flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full -top-1 -right-1 bg-gradient-to-r from-emerald-500 to-lime-500">
                   <span className="text-[10px] font-bold leading-none text-white">{conversations.length}</span>
                 </div>
               </button>
-              <div className="hidden w-px h-6 mx-1 bg-purple-200 sm:block"></div>
+              <div className="hidden w-px h-6 mx-1 bg-emerald-200 sm:block"></div>
               <button
                 onClick={redirectToLogin}
-                className="p-2 text-purple-600 transition-colors hover:bg-red-50 hover:text-red-600 rounded-xl"
+                className="p-2 text-emerald-600 transition-colors hover:bg-red-50 hover:text-red-600 rounded-xl"
                 title="Se déconnecter"
                 aria-label="Se déconnecter"
               >
@@ -675,25 +675,25 @@ const IdeazBotInterface = () => {
           <div className="flex-1 min-h-0 px-3 pt-4 overflow-y-auto sm:px-6 sm:pt-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-full px-2 py-6 text-center">
-                <div className="flex items-center justify-center w-16 h-16 mb-4 shadow-xl sm:w-20 sm:h-20 sm:mb-6 bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl">
+                <div className="flex items-center justify-center w-16 h-16 mb-4 shadow-xl sm:w-20 sm:h-20 sm:mb-6 bg-gradient-to-r from-emerald-600 to-lime-600 rounded-3xl">
                   <Lightbulb className="w-8 h-8 text-white sm:w-10 sm:h-10" />
                 </div>
-                <h2 className="mb-3 text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
+                <h2 className="mb-3 text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text">
                   Créons ensemble votre prochaine grande idée
                 </h2>
                 <p className="max-w-lg mb-6 text-base text-gray-600 sm:mb-8 sm:text-lg">
                   Décrivez votre projet, vos défis ou vos objectifs. IdeazBot vous accompagne avec des insights personnalisés et des solutions créatives.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-                  <div className="flex items-center space-x-2 text-purple-600">
+                  <div className="flex items-center space-x-2 text-emerald-600">
                     <Sparkles className="w-5 h-5" />
                     <span className="text-sm font-medium">Génération d'idées</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-blue-600">
+                  <div className="flex items-center space-x-2 text-lime-600">
                     <Rocket className="w-5 h-5" />
                     <span className="text-sm font-medium">Innovation guidée</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-indigo-600">
+                  <div className="flex items-center space-x-2 text-lime-600">
                     <Zap className="w-5 h-5" />
                     <span className="text-sm font-medium">Solutions rapides</span>
                   </div>
@@ -712,20 +712,20 @@ const IdeazBotInterface = () => {
                 {isLoading && (
                   <div className="flex justify-start mb-4 sm:mb-6">
                     <div className="flex items-start gap-2 sm:gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full shadow-lg sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full shadow-lg sm:w-10 sm:h-10 bg-gradient-to-r from-emerald-600 to-lime-600">
                         <Brain className="w-4 h-4 text-white sm:w-5 sm:h-5" />
                       </div>
-                      <div className="p-3 border sm:p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-purple-100/50">
+                      <div className="p-3 border sm:p-4 bg-gradient-to-br from-emerald-50 to-lime-50 rounded-2xl border-emerald-100/50">
                         <div className="flex space-x-1">
                           {[...Array(3)].map((_, i) => (
                             <div
                               key={i}
-                              className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-bounce"
+                              className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 animate-bounce"
                               style={{ animationDelay: `${i * 0.2}s` }}
                             />
                           ))}
                         </div>
-                        <p className="mt-2 text-xs text-purple-600">IdeazBot réfléchit...</p>
+                        <p className="mt-2 text-xs text-emerald-600">IdeazBot réfléchit...</p>
                       </div>
                     </div>
                   </div>
@@ -736,7 +736,7 @@ const IdeazBotInterface = () => {
           </div>
 
           {/* Input area avec design IdeazBot (marge du bas : barre d'accueil des iPhone) */}
-          <div className="px-3 pt-3 sm:px-6 sm:pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-purple-200/30 bg-white/50 backdrop-blur-sm">
+          <div className="px-3 pt-3 sm:px-6 sm:pt-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-emerald-200/30 bg-white/50 backdrop-blur-sm">
               <>
                 <div className="flex items-end gap-2 sm:gap-3">
                   <div className="relative flex-1 min-w-0">
@@ -747,10 +747,10 @@ const IdeazBotInterface = () => {
                       onKeyPress={handleKeyPress}
                       maxLength={MAX_MESSAGE_LENGTH}
                       placeholder="Décrivez votre idée, votre projet ou posez votre question..."
-                      className="w-full p-3 pb-6 text-base text-gray-900 placeholder-gray-500 transition-all duration-200 border-2 outline-none resize-none sm:p-4 sm:pb-6 sm:min-h-[6.5rem] border-purple-200/50 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-white/80 backdrop-blur-sm"
+                      className="w-full p-3 pb-6 text-base text-gray-900 placeholder-gray-500 transition-all duration-200 border-2 outline-none resize-none sm:p-4 sm:pb-6 sm:min-h-[6.5rem] border-emerald-200/50 rounded-2xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white/80 backdrop-blur-sm"
                       rows={2}
                     />
-                    <div className={`absolute text-xs pointer-events-none bottom-3 right-3 ${inputText.length >= MAX_MESSAGE_LENGTH ? 'text-red-500' : 'text-purple-400'}`}>
+                    <div className={`absolute text-xs pointer-events-none bottom-3 right-3 ${inputText.length >= MAX_MESSAGE_LENGTH ? 'text-red-500' : 'text-emerald-400'}`}>
                       {inputText.length}/{MAX_MESSAGE_LENGTH}
                     </div>
                   </div>
@@ -761,7 +761,7 @@ const IdeazBotInterface = () => {
                       onClick={handleSendMessage}
                       disabled={!inputText.trim() || isLoading}
                       aria-label="Envoyer"
-                      className="p-3 text-white transition-all duration-200 transform shadow-lg sm:p-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 rounded-2xl disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 disabled:transform-none"
+                      className="p-3 text-white transition-all duration-200 transform shadow-lg sm:p-4 bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-700 hover:to-lime-700 disabled:from-gray-300 disabled:to-gray-400 rounded-2xl disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 disabled:transform-none"
                     >
                       {isLoading ? (
                         <div className="flex space-x-1">
@@ -780,7 +780,7 @@ const IdeazBotInterface = () => {
                   </div>
                 </div>
               </>
-            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-purple-500 sm:justify-between sm:mt-3">
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs text-emerald-500 sm:justify-between sm:mt-3">
               {/* Raccourcis clavier inutiles sur écran tactile */}
               <span className="hidden sm:inline">Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne</span>
               <span>Propulsé par IdeazBot AI</span>

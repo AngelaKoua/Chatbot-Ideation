@@ -93,7 +93,7 @@ export default function HomePage() {
   }));
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-100">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-emerald-50 via-green-50 to-yellow-100">
       {/* Animation CSS pour le slide des mots */}
       <style jsx>{`
         @keyframes slideFromRight {
@@ -122,7 +122,7 @@ export default function HomePage() {
       <div className="absolute inset-0 overflow-hidden">
         {/* Texte principal animé */}
         <div className="absolute top-[16%] left-1/2 transform -translate-x-1/2">
-          <div className="text-5xl sm:text-7xl md:text-8xl font-bold text-purple-200/20 tracking-wider text-center">
+          <div className="text-5xl sm:text-7xl md:text-8xl font-bold text-emerald-200/20 tracking-wider text-center">
             {displayedText}
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function HomePage() {
             {floatingElements.map((element) => (
               <div
                 key={element.id}
-                className="absolute rounded-full bg-gradient-to-br from-purple-200/30 to-violet-200/30 animate-bounce"
+                className="absolute rounded-full bg-gradient-to-br from-emerald-200/30 to-green-200/30 animate-bounce"
                 style={{
                   width: `${element.size}px`,
                   height: `${element.size}px`,
@@ -159,7 +159,7 @@ export default function HomePage() {
                   animationDelay: `${sparkle.delay}s`
                 }}
               >
-                <Sparkles className="w-4 h-4 text-indigo-300/50" />
+                <Sparkles className="w-4 h-4 text-yellow-300/50" />
               </div>
             ))}
 
@@ -190,19 +190,19 @@ export default function HomePage() {
           <Lightbulb className="w-8 h-8 text-yellow-400/60" />
         </div>
         <div className="absolute top-32 right-20 animate-bounce" style={{animationDuration: '3s', animationDelay: '1s'}}>
-          <Brain className="w-10 h-10 text-purple-400/70" />
+          <Brain className="w-10 h-10 text-emerald-400/70" />
         </div>
         <div className="absolute bottom-32 left-24 animate-ping" style={{animationDuration: '2s'}}>
-          <Rocket className="w-8 h-8 text-indigo-400/60" />
+          <Rocket className="w-8 h-8 text-yellow-400/60" />
         </div>
         <div className="absolute bottom-20 right-32 animate-pulse" style={{animationDuration: '2.5s', animationDelay: '0.5s'}}>
-          <Target className="w-7 h-7 text-violet-400/60" />
+          <Target className="w-7 h-7 text-green-400/60" />
         </div>
         <div className="absolute top-1/3 left-8 animate-spin" style={{animationDuration: '8s'}}>
           <Star className="w-6 h-6 text-yellow-300/50" />
         </div>
         <div className="absolute bottom-1/3 right-12 animate-spin" style={{animationDuration: '10s'}}>
-          <Infinity className="w-8 h-8 text-purple-300/60" />
+          <Infinity className="w-8 h-8 text-emerald-300/60" />
         </div>
 
         {/* Éclairs d'énergie */}
@@ -214,20 +214,20 @@ export default function HomePage() {
         </div>
 
         {/* Formes géométriques en rotation */}
-        <div className="absolute top-1/5 left-1/5 w-40 h-40 border-2 border-purple-200/20 rounded-full animate-spin" 
+        <div className="absolute top-1/5 left-1/5 w-40 h-40 border-2 border-emerald-200/20 rounded-full animate-spin" 
              style={{animationDuration: '25s'}}></div>
-        <div className="absolute bottom-1/5 right-1/5 w-32 h-32 border-2 border-violet-200/30 rotate-45 animate-spin" 
+        <div className="absolute bottom-1/5 right-1/5 w-32 h-32 border-2 border-green-200/30 rotate-45 animate-spin" 
              style={{animationDuration: '20s', animationDirection: 'reverse'}}></div>
-        <div className="absolute top-1/2 left-12 w-24 h-24 border-2 border-indigo-200/25 rounded-lg animate-spin" 
+        <div className="absolute top-1/2 left-12 w-24 h-24 border-2 border-yellow-200/25 rounded-lg animate-spin" 
              style={{animationDuration: '15s'}}></div>
 
         {/* Lignes de connexion neuronale */}
         <svg className="absolute inset-0 w-full h-full opacity-15" viewBox="0 0 1200 800">
           <defs>
             <linearGradient id="neuralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.4" />
-              <stop offset="50%" stopColor="#A855F7" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#6366F1" stopOpacity="0.1" />
+              <stop offset="0%" stopColor="#10B981" stopOpacity="0.4" />
+              <stop offset="50%" stopColor="#84CC16" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#EAB308" stopOpacity="0.1" />
             </linearGradient>
           </defs>
           {Array.from({ length: 6 }, (_, i) => (
@@ -253,8 +253,8 @@ export default function HomePage() {
         <div className="text-center mb-8 sm:mb-12 max-w-4xl">
           {/* Logo principal avec halo */}
           <div className="mb-8 relative">
-            <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-2xl animate-pulse"></div>
-            <div className="relative bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 p-5 sm:p-6 rounded-full inline-block shadow-2xl">
+            <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-2xl animate-pulse"></div>
+            <div className="relative bg-gradient-to-br from-emerald-600 via-green-600 to-lime-600 p-5 sm:p-6 rounded-full inline-block shadow-2xl">
               <Brain className="w-12 h-12 sm:w-16 sm:h-16 text-white animate-pulse" />
               <div className="absolute -top-2 -right-2 bg-yellow-400 p-1 rounded-full animate-bounce">
                 <Lightbulb className="w-4 h-4 text-yellow-800" />
@@ -263,7 +263,7 @@ export default function HomePage() {
           </div>
 
           {/* Titre principal */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent mb-6 animate-pulse">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 bg-clip-text text-transparent mb-6 animate-pulse">
             IdeazBot
           </h1>
           
@@ -274,7 +274,7 @@ export default function HomePage() {
               {["INSPIRE", "DEVELOP", "ENGAGE", "ACHIEVE"].map((word, index) => (
                 <span
                   key={word}
-                  className="bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent font-bold whitespace-nowrap"
+                  className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent font-bold whitespace-nowrap"
                   style={{
                     animationDelay: `${index * 0.8}s`,
                     animationDuration: '3s',
@@ -309,7 +309,7 @@ export default function HomePage() {
             </p>
             <Link 
               href="/Chatbot"
-              className="group inline-flex w-full items-center justify-center bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+              className="group inline-flex w-full items-center justify-center bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 hover:from-emerald-700 hover:via-green-700 hover:to-lime-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
             >
               <Play className="mr-2 h-5 w-5 group-hover:animate-pulse" />
               Commencer à créer
@@ -320,7 +320,7 @@ export default function HomePage() {
           /* Utilisateur non connecté - Design innovant */
           <div className="relative group mb-8 max-w-2xl w-full">
             {/* Effet de halo pulsant */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-50 animate-pulse"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 via-amber-600 to-lime-600 rounded-2xl blur opacity-25 group-hover:opacity-50 animate-pulse"></div>
             
             {/* Container principal */}
             <div className="relative bg-gradient-to-br from-white/90 via-white/80 to-white/70 backdrop-blur-xl rounded-2xl p-5 sm:p-8 border border-white/30 shadow-2xl">
@@ -328,19 +328,19 @@ export default function HomePage() {
               <div className="text-center mb-8 relative">
                 <div className="flex justify-center mb-6 relative">
                   {/* Cercles concentriques animés */}
-                  <div className="absolute w-24 h-24 rounded-full border-2 border-purple-300/30 animate-spin" style={{animationDuration: '8s'}}></div>
-                  <div className="absolute w-32 h-32 rounded-full border border-violet-200/20 animate-spin" style={{animationDuration: '12s', animationDirection: 'reverse'}}></div>
+                  <div className="absolute w-24 h-24 rounded-full border-2 border-emerald-300/30 animate-spin" style={{animationDuration: '8s'}}></div>
+                  <div className="absolute w-32 h-32 rounded-full border border-green-200/20 animate-spin" style={{animationDuration: '12s', animationDirection: 'reverse'}}></div>
                   
                   {/* Logo central avec effet magnétique */}
-                  <div className="relative z-10 bg-gradient-to-br from-purple-500 via-violet-600 to-indigo-600 p-5 rounded-2xl shadow-xl transform group-hover:scale-110 transition-all duration-500">
+                  <div className="relative z-10 bg-gradient-to-br from-emerald-500 via-green-600 to-lime-600 p-5 rounded-2xl shadow-xl transform group-hover:scale-110 transition-all duration-500">
                     <Rocket className="w-10 h-10 text-white animate-bounce" />
                     {/* Particules flottantes autour */}
                     <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
-                    <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-pink-400 rounded-full animate-ping" style={{animationDelay: '0.5s'}}></div>
+                    <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-amber-400 rounded-full animate-ping" style={{animationDelay: '0.5s'}}></div>
                   </div>
                 </div>
                 
-                <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 bg-clip-text text-transparent mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-700 via-green-700 to-lime-700 bg-clip-text text-transparent mb-3">
                   Prêt à innover ?
                 </h2>
                 <p className="text-gray-600 text-base sm:text-lg">
@@ -353,7 +353,7 @@ export default function HomePage() {
                 {/* Bouton S'inscrire avec effet holographique */}
                 <Link 
                   href="/Inscription"
-                  className="group relative w-full inline-block overflow-hidden bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:scale-[1.03]"
+                  className="group relative w-full inline-block overflow-hidden bg-gradient-to-r from-emerald-600 via-green-600 to-lime-600 hover:from-emerald-700 hover:via-green-700 hover:to-lime-700 text-white font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:scale-[1.03]"
                 >
                   {/* Effet de lumière qui bouge */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -368,10 +368,10 @@ export default function HomePage() {
                 {/* Bouton Se connecter avec effet néon */}
                 <Link 
                   href="/Connexion"
-                  className="group relative w-full inline-block bg-transparent border-2 border-purple-300 hover:border-purple-500 text-purple-700 hover:text-purple-800 font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-300 hover:bg-purple-50/50 transform hover:scale-[1.02] overflow-hidden"
+                  className="group relative w-full inline-block bg-transparent border-2 border-emerald-300 hover:border-emerald-500 text-emerald-700 hover:text-emerald-800 font-bold py-4 px-4 sm:py-5 sm:px-8 rounded-2xl transition-all duration-300 hover:bg-emerald-50/50 transform hover:scale-[1.02] overflow-hidden"
                 >
                   {/* Effet néon au survol */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-purple-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/0 via-emerald-400/10 to-emerald-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   <div className="relative flex items-center justify-center">
                     <Users className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 group-hover:animate-bounce" />
@@ -393,8 +393,8 @@ export default function HomePage() {
                     className="flex flex-col items-center group/item opacity-70 hover:opacity-100 transition-opacity duration-200"
                     style={{ animationDelay: `${index * 0.2}s` }}
                   >
-                    <div className="bg-gradient-to-br from-purple-100 to-violet-100 p-2 rounded-lg mb-1 group-hover/item:scale-110 transition-transform duration-200">
-                      <Icon className="w-4 h-4 text-purple-600" />
+                    <div className="bg-gradient-to-br from-emerald-100 to-green-100 p-2 rounded-lg mb-1 group-hover/item:scale-110 transition-transform duration-200">
+                      <Icon className="w-4 h-4 text-emerald-600" />
                     </div>
                     <span className="text-xs text-gray-500 font-medium">{label}</span>
                   </div>
@@ -409,7 +409,7 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {/* Fonctionnalité 1 */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-              <div className="bg-gradient-to-br from-purple-500 to-violet-600 p-3 rounded-lg w-fit mb-4">
+              <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-lg w-fit mb-4">
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">IA Créative</h3>
@@ -420,7 +420,7 @@ export default function HomePage() {
 
             {/* Fonctionnalité 2 */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-              <div className="bg-gradient-to-br from-violet-500 to-indigo-600 p-3 rounded-lg w-fit mb-4">
+              <div className="bg-gradient-to-br from-green-500 to-lime-600 p-3 rounded-lg w-fit mb-4">
                 <Lightbulb className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">Brainstorming Intelligent</h3>
@@ -431,7 +431,7 @@ export default function HomePage() {
 
             {/* Fonctionnalité 3 */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-lg w-fit mb-4">
+              <div className="bg-gradient-to-br from-lime-500 to-emerald-600 p-3 rounded-lg w-fit mb-4">
                 <Rocket className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-3">Projets Ambitieux</h3>
@@ -444,7 +444,7 @@ export default function HomePage() {
 
         {/* Scroll indicator */}
         <div className="animate-bounce">
-          <ChevronDown className="w-8 h-8 text-purple-400/60" />
+          <ChevronDown className="w-8 h-8 text-emerald-400/60" />
         </div>
       </div>
     </div>

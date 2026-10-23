@@ -148,7 +148,7 @@ const MindmapPage = () => {
         spacingHorizontal: isSmallScreen ? 50 : 100,
         paddingX: isSmallScreen ? 8 : 12,
         color: (node: INode) => {
-          const colors = ['#7c3aed', '#4f46e5', '#06b6d4', '#0ea5e9', '#6366f1'];
+          const colors = ['#047857', '#16a34a', '#65a30d', '#eab308', '#f59e0b'];
           const level = (node.payload as any)?.depth || 0;
           return colors[level % colors.length];
         },
@@ -172,16 +172,16 @@ const MindmapPage = () => {
 
   if (!mindmapData) {
     return (
-      <div className="flex items-center justify-center p-4 min-h-dvh bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+      <div className="flex items-center justify-center p-4 min-h-dvh bg-gradient-to-br from-emerald-50 via-lime-50 to-yellow-50">
         <div className="w-full max-w-sm p-6 text-center shadow-xl sm:p-8 rounded-2xl bg-white/80 backdrop-blur-sm">
-          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600">
+          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-emerald-600 to-lime-600">
             <Brain className="w-8 h-8 text-white" />
           </div>
           <h1 className="mb-2 text-xl font-bold text-gray-800">Aucune mindmap disponible</h1>
           <p className="text-gray-600">Veuillez d&apos;abord générer des idées dans le chatbot.</p>
           <button
             onClick={() => window.location.href = '/Chatbot'}
-            className="px-4 py-2 mt-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            className="px-4 py-2 mt-6 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-700 hover:to-lime-700"
           >
             Retour au chat
           </button>
@@ -253,11 +253,11 @@ const MindmapPage = () => {
 
   return (
     // h-dvh + flex : la carte occupe toute la hauteur restante, sur mobile comme sur ordinateur
-    <div className="flex flex-col p-3 h-dvh sm:p-6 lg:p-8 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="flex flex-col p-3 h-dvh sm:p-6 lg:p-8 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-br from-emerald-50 via-lime-50 to-yellow-50">
       <div className="flex flex-col flex-1 w-full min-h-0 mx-auto max-w-7xl">
         <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">
+            <h1 className="text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text">
               Mindmap des Idées
             </h1>
             <p className="text-sm text-gray-600 sm:text-base">Visualisation de vos idées générées</p>
@@ -265,14 +265,14 @@ const MindmapPage = () => {
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <button
               onClick={() => window.location.href = '/Chatbot'}
-              className="px-4 py-2 text-sm text-purple-600 transition-all duration-200 border border-purple-200 sm:text-base rounded-xl hover:bg-purple-50"
+              className="px-4 py-2 text-sm text-emerald-600 transition-all duration-200 border border-emerald-200 sm:text-base rounded-xl hover:bg-emerald-50"
             >
               Retour au chat
             </button>
             <button
               onClick={handleDownloadPng}
               disabled={status === 'loading'}
-              className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 sm:text-base rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-semibold text-white transition-all duration-200 sm:text-base rounded-xl bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-700 hover:to-lime-700 disabled:opacity-50"
             >
               Télécharger l&apos;image
             </button>
@@ -288,10 +288,10 @@ const MindmapPage = () => {
         <div className="relative flex-1 min-h-[320px] p-2 overflow-hidden shadow-xl sm:p-6 lg:p-8 bg-white/80 backdrop-blur-sm rounded-2xl">
           {status === 'loading' && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70">
-              <div className="flex items-center justify-center mb-3 rounded-full w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 animate-pulse">
+              <div className="flex items-center justify-center mb-3 rounded-full w-14 h-14 bg-gradient-to-r from-emerald-600 to-lime-600 animate-pulse">
                 <Brain className="text-white w-7 h-7" />
               </div>
-              <p className="text-sm text-purple-700">Extraction des idées clés…</p>
+              <p className="text-sm text-emerald-700">Extraction des idées clés…</p>
             </div>
           )}
           {/* touch-none : le glisser / pincer déplace et zoome la carte au lieu de faire défiler la page */}

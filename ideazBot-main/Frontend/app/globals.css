@@ -18,7 +18,7 @@
 
 @layer components {
   .animated-gradient {
-    @apply bg-gradient-to-r from-purple-600 to-blue-600;
+    @apply bg-gradient-to-r from-emerald-600 to-lime-600;
     background-size: 200% 200%;
     animation: gradient 3s ease infinite;
   }
